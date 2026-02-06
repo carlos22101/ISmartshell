@@ -1,6 +1,7 @@
 package com.carlos.ismartshell.core.network
 
 import com.carlos.ismartshell.features.auth.data.models.LoginRequest
+import com.carlos.ismartshell.features.auth.data.models.LoginResponseDto
 import com.carlos.ismartshell.features.auth.data.models.RegisterRequest
 import com.carlos.ismartshell.features.auth.data.models.UserDto
 import com.carlos.ismartshell.features.buyer.data.models.BuyerStoreDto
@@ -12,10 +13,10 @@ import retrofit2.http.*
 interface ApiService {
 
     @POST("api/auth/register")
-    suspend fun register(@Body request: RegisterRequest): UserDto
+    suspend fun register(@Body request: RegisterRequest): LoginResponseDto
 
     @POST("api/auth/login")
-    suspend fun login(@Body request: LoginRequest): UserDto
+    suspend fun login(@Body request: LoginRequest): LoginResponseDto
 
     @GET("api/auth/me")
     suspend fun getMe(): UserDto

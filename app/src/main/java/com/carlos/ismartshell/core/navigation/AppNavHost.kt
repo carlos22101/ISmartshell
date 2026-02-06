@@ -3,6 +3,7 @@ package com.carlos.ismartshell.core.navigation
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
+import android.util.Log
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.carlos.ismartshell.core.di.AppViewModelProvider
@@ -26,6 +27,7 @@ fun AppNavHost() {
             LoginScreen(
                 viewModel = viewModel,
                 onLoginSuccess = { role ->
+                    Log.d("DEBUG_ROL", "El rol que llegó es: '$role'")
                     if (role.equals("SELLER", ignoreCase = true)) {
                         navController.navigate("create_store") {
                             popUpTo("login") { inclusive = true }
@@ -36,7 +38,6 @@ fun AppNavHost() {
                         }
                     }
                 },
-                // --- AQUÍ ESTÁ EL ARREGLO ---
                 onNavigateToRegister = {
                     navController.navigate("register")
                 }
