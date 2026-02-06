@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.carlos.ismartshell.core.di.AppViewModelProvider
 import com.carlos.ismartshell.features.auth.presentation.screens.LoginScreen
+import com.carlos.ismartshell.features.auth.presentation.screens.RegisterScreen
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
 import com.carlos.ismartshell.features.buyer.presentation.screens.HomeBuyerScreen
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
@@ -21,6 +22,7 @@ fun AppNavHost() {
 
         composable("login") {
             val viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
+
             LoginScreen(
                 viewModel = viewModel,
                 onLoginSuccess = { role ->
@@ -33,6 +35,23 @@ fun AppNavHost() {
                             popUpTo("login") { inclusive = true }
                         }
                     }
+                },
+                // --- AQUÍ ESTÁ EL ARREGLO ---
+                onNavigateToRegister = {
+                    navController.navigate("register")
+                }
+            )
+        }
+
+        composable("register") {
+            val viewModel: com.carlos.ismartshell.features.auth.presentation.viewmodels.RegisterViewModel = viewModel(factory = AppViewModelProvider.Factory)
+            RegisterScreen(
+                viewModel = viewModel,
+                onRegisterSuccess = {
+                    navController.popBackStack()
+                },
+                onBackToLogin = {
+                    navController.popBackStack()
                 }
             )
         }

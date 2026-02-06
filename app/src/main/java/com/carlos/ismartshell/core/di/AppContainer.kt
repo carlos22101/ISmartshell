@@ -29,9 +29,9 @@ class DefaultAppContainer(context: Context) : AppContainer {
         .addInterceptor(AuthInterceptor(tokenManager))
         .build()
 
-    // CAMBIA LA URL SI ES NECESARIO (10.0.2.2 para emulador Android standard)
+
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:8080/")
+        .baseUrl("https://apismart.serviciocdn.icu/")
         .addConverterFactory(GsonConverterFactory.create())
         .client(okHttpClient)
         .build()

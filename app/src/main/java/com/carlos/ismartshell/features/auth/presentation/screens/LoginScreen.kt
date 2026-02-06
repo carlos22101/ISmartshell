@@ -12,7 +12,8 @@ import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewMod
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: (String) -> Unit
+    onLoginSuccess: (String) -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -59,10 +60,18 @@ fun LoginScreen(
                 Text("Entrar")
             }
         }
+        if (uiState.error != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Error: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+        }
 
         if (uiState.error != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Text("Error: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = onNavigateToRegister) {
+            Text("¿No tienes cuenta? Regístrate aquí")
         }
     }
 }
