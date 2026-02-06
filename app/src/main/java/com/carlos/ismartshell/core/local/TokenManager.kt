@@ -14,7 +14,15 @@ class TokenManager(context: Context) {
         return prefs.getString("jwt_token", null)
     }
 
-    fun clearToken() {
-        prefs.edit().remove("jwt_token").apply()
+    fun saveUserId(userId: Int) {
+        prefs.edit().putInt("user_id", userId).apply()
+    }
+
+    fun getUserId(): Int {
+        return prefs.getInt("user_id", -1)
+    }
+
+    fun clear() {
+        prefs.edit().clear().apply()
     }
 }

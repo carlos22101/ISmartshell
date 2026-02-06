@@ -1,12 +1,15 @@
 package com.carlos.ismartshell.features.seller.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class CreateStoreRequest(
     val name: String,
     val slug: String,
     val description: String,
     val address: String,
     val lat: Double,
-    val lng: Double
+    val lng: Double,
+    @SerializedName("seller_id") val sellerId: Int
 )
 
 data class UpdateStoreRequest(
@@ -20,10 +23,11 @@ data class UpdateStoreRequest(
 
 data class SellerStoreDto(
     val id: Int,
+    @SerializedName("seller_id") val sellerId: Int?,
     val name: String,
     val slug: String?,
-    val description: String,
-    val address: String,
+    val description: String?,
+    val address: String?,
     val lat: Double?,
     val lng: Double?
 )

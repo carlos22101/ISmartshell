@@ -10,18 +10,13 @@ import com.carlos.ismartshell.features.auth.domain.repositories.AuthRepository
 
 class AuthRepositoryImpl(
     private val apiService: ApiService,
-    private val tokenManager: TokenManager // <--- AGREGADO: Ahora acepta el TokenManager
+    private val tokenManager: TokenManager
 ) : AuthRepository {
 
     override suspend fun login(email: String, pass: String): User {
-        // 1. Llamada a la API
         val response = apiService.login(LoginRequest(email, pass))
-
-        // 2. IMPORTANTE: Guardamos el token en el celular
-        // Usamos response.accessToken porque así lo definimos en el DTO nuevo
         tokenManager.saveToken(response.accessToken)
-
-        // 3. Devolvemos el usuario al dominio
+        tokenManager.saveUserId(response.user.id)
         return response.toDomain()
     }
 
@@ -42,10 +37,8 @@ class AuthRepositoryImpl(
             phone = phone
         )
         val response = apiService.register(request)
-
-        // También guardamos el token al registrarse
         tokenManager.saveToken(response.accessToken)
-
+        tokenManager.saveUserId(response.user.id)
         return response.toDomain()
     }
 }

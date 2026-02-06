@@ -30,8 +30,12 @@ interface ApiService {
     @POST("api/stores")
     suspend fun createStore(@Body store: CreateStoreRequest): SellerStoreDto
 
-    @PUT("api/stores/{id}")
-    suspend fun updateStore(@Path("id") id: Int, @Body store: UpdateStoreRequest): SellerStoreDto
+    // Cambiado {id} por {store_id} para coincidir con Swagger
+    @PUT("api/stores/{store_id}")
+    suspend fun updateStore(
+        @Path("store_id") id: Int, 
+        @Body store: UpdateStoreRequest
+    ): SellerStoreDto
 
     @DELETE("api/stores/{id}")
     suspend fun deleteStore(@Path("id") id: Int): Unit

@@ -36,6 +36,7 @@ object AppViewModelProvider {
         initializer {
             val app = ismartApplication()
             val repo = app.container.sellerRepository
+            val tokenManager = app.container.tokenManager
 
 
             CreateStoreViewModel(
@@ -43,7 +44,8 @@ object AppViewModelProvider {
                 createStoreUseCase = SellerModule.provideCreateStoreUseCase(repo),
                 updateStoreUseCase = SellerModule.provideUpdateStoreUseCase(repo),
                 deleteStoreUseCase = SellerModule.provideDeleteStoreUseCase(repo),
-                getDetailUseCase = SellerModule.provideGetDetailUseCase(repo)
+                getDetailUseCase = SellerModule.provideGetDetailUseCase(repo),
+                tokenManager = tokenManager
             )
         }
     }

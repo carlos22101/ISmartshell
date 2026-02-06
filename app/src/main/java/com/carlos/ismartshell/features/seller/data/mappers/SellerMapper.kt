@@ -7,8 +7,8 @@ fun SellerStoreDto.toDomain(): SellerStore {
     return SellerStore(
         id = id,
         name = name,
-        description = description,
-        address = address,
+        description = description ?: "",
+        address = address ?: "",
         slug = slug,
         lat = lat,
         lng = lng

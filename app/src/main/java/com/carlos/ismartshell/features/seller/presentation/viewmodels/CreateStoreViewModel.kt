@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carlos.ismartshell.core.local.TokenManager
 import com.carlos.ismartshell.features.seller.domain.entities.SellerStore
 import com.carlos.ismartshell.features.seller.domain.usecases.*
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreUiState
@@ -15,7 +16,8 @@ class CreateStoreViewModel(
     private val createStoreUseCase: CreateStoreUseCase,
     private val updateStoreUseCase: UpdateStoreUseCase,
     private val deleteStoreUseCase: DeleteStoreUseCase,
-    private val getDetailUseCase: GetSellerStoreDetailUseCase
+    private val getDetailUseCase: GetSellerStoreDetailUseCase,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     var uiState by mutableStateOf(CreateStoreUiState())
@@ -63,14 +65,20 @@ class CreateStoreViewModel(
             try {
                 val latDouble = lat.toDoubleOrNull() ?: 0.0
                 val lngDouble = lng.toDoubleOrNull() ?: 0.0
+                val sellerId = tokenManager.getUserId()
+
+                if (sellerId == -1) {
+                    uiState = CreateStoreUiState(error = "Sesión no válida")
+                    return@launch
+                }
 
                 if (isEditing && currentStoreId != null) {
-
+                    // El PUT no lleva seller_id en el cuerpo según Swagger
                     updateStoreUseCase(currentStoreId!!, name, slug, desc, address, latDouble, lngDouble)
                     uiState = CreateStoreUiState(isSuccess = true)
                 } else {
-
-                    createStoreUseCase(name, slug, desc, address, latDouble, lngDouble)
+                    // El POST sí lo lleva
+                    createStoreUseCase(sellerId, name, slug, desc, address, latDouble, lngDouble)
                     uiState = CreateStoreUiState(isSuccess = true)
                 }
 
