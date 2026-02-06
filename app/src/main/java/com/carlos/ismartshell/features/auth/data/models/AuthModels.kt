@@ -17,8 +17,8 @@ data class RegisterRequest(
 )
 
 data class UserDto(
-    val id: Int,
-    val email: String,
-    val role: String,
-    val token: String?
+    val id: Int? = null,
+    val email: String? = null,
+    val role: String? = null,
+    val token: String? = null
 )
