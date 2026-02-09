@@ -50,7 +50,7 @@ class CreateStoreViewModel(
     fun resetForm() {
         isEditing = false
         currentStoreId = null
-        uiState = CreateStoreUiState() // Limpia errores/loading
+        uiState = CreateStoreUiState()
     }
 
     fun onEditSelected(store: SellerStore) {
@@ -73,11 +73,10 @@ class CreateStoreViewModel(
                 }
 
                 if (isEditing && currentStoreId != null) {
-                    // El PUT no lleva seller_id en el cuerpo según Swagger
-                    updateStoreUseCase(currentStoreId!!, name, slug, desc, address, latDouble, lngDouble)
+                    updateStoreUseCase(currentStoreId!!,  name, slug, desc, address, latDouble, lngDouble)
                     uiState = CreateStoreUiState(isSuccess = true)
                 } else {
-                    // El POST sí lo lleva
+
                     createStoreUseCase(sellerId, name, slug, desc, address, latDouble, lngDouble)
                     uiState = CreateStoreUiState(isSuccess = true)
                 }

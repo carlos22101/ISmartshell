@@ -23,7 +23,7 @@ data class UpdateStoreRequest(
 
 data class SellerStoreDto(
     val id: Int,
-    @SerializedName("seller_id") val sellerId: Int?,
+    @SerializedName("seller_id") val seller_id: Int?,
     val name: String,
     val slug: String?,
     val description: String?,

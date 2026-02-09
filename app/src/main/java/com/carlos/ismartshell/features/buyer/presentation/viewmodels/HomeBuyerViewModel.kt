@@ -1,30 +1,33 @@
 package com.carlos.ismartshell.features.buyer.presentation.viewmodels
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlos.ismartshell.features.buyer.domain.usecases.GetStoresUseCase
 import com.carlos.ismartshell.features.buyer.presentation.screens.HomeBuyerUiState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeBuyerViewModel(private val getStoresUseCase: GetStoresUseCase) : ViewModel() {
-    var uiState by mutableStateOf(HomeBuyerUiState())
-        private set
-
+    private val _uiState = MutableStateFlow(HomeBuyerUiState())
+    val uiState: StateFlow<HomeBuyerUiState> = _uiState.asStateFlow()
     init {
         loadStores()
     }
-
     fun loadStores() {
         viewModelScope.launch {
-            uiState = HomeBuyerUiState(isLoading = true)
+            _uiState.update { it.copy(isLoading = true) }
             try {
                 val stores = getStoresUseCase()
-                uiState = HomeBuyerUiState(stores = stores)
+                _uiState.update {
+                    it.copy(isLoading = false, stores = stores, error = null)
+                }
             } catch (e: Exception) {
-                uiState = HomeBuyerUiState(error = e.message)
+                _uiState.update {
+                    it.copy(isLoading = false, error = e.message)
+                }
             }
         }
     }

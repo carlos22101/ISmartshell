@@ -190,7 +190,7 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Lista de Tiendas
+
             Text(
                 text = "Tus Tiendas Registradas",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -243,7 +243,7 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
                                 name = store.name
                                 desc = store.description
                                 address = store.address
-                                // Nota: Para slug, lat y lng, se asumen vacíos o se requiere mejorar el Entity
+
                             }) {
                                 Icon(Icons.Default.Edit, "Editar", tint = Primary)
                             }

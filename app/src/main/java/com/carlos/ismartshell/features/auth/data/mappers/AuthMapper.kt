@@ -9,13 +9,8 @@ fun LoginResponseDto.toDomain(): User {
     return User(
         id = this.user.id,
         email = this.user.email,
-
         role = this.user.role,
-
-
         token = this.accessToken,
-
-
         username = this.user.username,
         fullName = this.user.fullName
     )
