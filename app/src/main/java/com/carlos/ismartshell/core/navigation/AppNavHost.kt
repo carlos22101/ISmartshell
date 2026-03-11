@@ -1,19 +1,19 @@
 package com.carlos.ismartshell.core.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
 import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.carlos.ismartshell.core.di.AppViewModelProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.carlos.ismartshell.features.auth.presentation.screens.LoginScreen
 import com.carlos.ismartshell.features.auth.presentation.screens.RegisterScreen
-import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
 import com.carlos.ismartshell.features.buyer.presentation.screens.HomeBuyerScreen
-import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreScreen
-import com.carlos.ismartshell.features.seller.presentation.viewmodels.CreateStoreViewModel
+import com.carlos.ismartshell.features.buyer.presentation.screens.QrScannerScreen
+import com.carlos.ismartshell.features.buyer.presentation.screens.StoreMapScreen
+import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
+
 
 @Composable
 fun AppNavHost() {
@@ -22,49 +22,57 @@ fun AppNavHost() {
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            val viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
-
+            val viewModel: LoginViewModel = hiltViewModel()
             LoginScreen(
                 viewModel = viewModel,
-                onLoginSuccess = { role ->
-                    Log.d("DEBUG_ROL", "El rol que llegó es: '$role'")
-                    if (role.equals("SELLER", ignoreCase = true)) {
-                        navController.navigate("create_store") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    } else {
-                        navController.navigate("home_buyer") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
+                onLoginSuccess = {
+                    val role = viewModel.uiState.user?.role ?: ""
+                    Log.d("DEBUG_ROL", "Rol obtenido del VM: '$role'")
+                    val dest = if (role.equals("SELLER", ignoreCase = true)) "create_store" else "home_buyer"
+                    navController.navigate(dest) { popUpTo("login") { inclusive = true } }
                 },
-                onNavigateToRegister = {
-                    navController.navigate("register")
-                }
+                onNavigateToRegister = { navController.navigate("register") }
             )
         }
 
         composable("register") {
-            val viewModel: com.carlos.ismartshell.features.auth.presentation.viewmodels.RegisterViewModel = viewModel(factory = AppViewModelProvider.Factory)
             RegisterScreen(
-                viewModel = viewModel,
-                onRegisterSuccess = {
-                    navController.popBackStack()
-                },
-                onBackToLogin = {
-                    navController.popBackStack()
-                }
+                viewModel = hiltViewModel(),
+                onRegisterSuccess = { navController.popBackStack() },
+                onBackToLogin = { navController.popBackStack() }
             )
         }
 
         composable("home_buyer") {
-            val viewModel: HomeBuyerViewModel = viewModel(factory = AppViewModelProvider.Factory)
-            HomeBuyerScreen(viewModel = viewModel)
+            HomeBuyerScreen(
+                viewModel = hiltViewModel(),
+                onNavigateToQr = { navController.navigate("qr_scanner") },
+                onNavigateToMap = { storeId -> navController.navigate("store_map/$storeId") }
+            )
         }
 
         composable("create_store") {
-            val viewModel: CreateStoreViewModel = viewModel(factory = AppViewModelProvider.Factory)
-            CreateStoreScreen(viewModel = viewModel)
+            CreateStoreScreen(viewModel = hiltViewModel())
+        }
+
+        composable("qr_scanner") {
+            QrScannerScreen(
+                viewModel = hiltViewModel(),
+                onQrResult = { value ->
+                    Log.d("QR", "Código escaneado: $value")
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("store_map/{storeId}") { backStackEntry ->
+            val storeId = backStackEntry.arguments?.getString("storeId")?.toIntOrNull() ?: -1
+            StoreMapScreen(
+                storeId = storeId,
+                viewModel = hiltViewModel(),
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

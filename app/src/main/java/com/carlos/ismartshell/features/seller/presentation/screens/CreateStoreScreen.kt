@@ -23,7 +23,7 @@ import com.carlos.ismartshell.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
-    // 1. Recolección de estados suscritos al ViewModel
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val formState by viewModel.formState.collectAsStateWithLifecycle()
 
