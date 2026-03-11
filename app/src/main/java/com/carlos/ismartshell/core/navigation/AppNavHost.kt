@@ -5,15 +5,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel          // ← nuevo import
 import com.carlos.ismartshell.features.auth.presentation.screens.LoginScreen
 import com.carlos.ismartshell.features.auth.presentation.screens.RegisterScreen
 import com.carlos.ismartshell.features.buyer.presentation.screens.HomeBuyerScreen
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreScreen
 import com.carlos.ismartshell.features.buyer.presentation.screens.QrScannerScreen
 import com.carlos.ismartshell.features.buyer.presentation.screens.StoreMapScreen
-import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
-
 
 @Composable
 fun AppNavHost() {
@@ -22,12 +20,10 @@ fun AppNavHost() {
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            val viewModel: LoginViewModel = hiltViewModel()
             LoginScreen(
-                viewModel = viewModel,
-                onLoginSuccess = {
-                    val role = viewModel.uiState.user?.role ?: ""
-                    Log.d("DEBUG_ROL", "Rol obtenido del VM: '$role'")
+                viewModel = hiltViewModel(),
+                onLoginSuccess = { role ->
+                    Log.d("DEBUG_ROL", "Rol recibido: '$role'")
                     val dest = if (role.equals("SELLER", ignoreCase = true)) "create_store" else "home_buyer"
                     navController.navigate(dest) { popUpTo("login") { inclusive = true } }
                 },

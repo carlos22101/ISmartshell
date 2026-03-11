@@ -42,6 +42,7 @@ class StoreMapViewModel @Inject constructor(
             try {
                 val store = storeRepository.getStores().firstOrNull { it.id == id }
                 _store.value = store
+                _storeLocation.value = LatLng(store.lat, store.lng)
             } catch (e: Exception) {
             } finally {
                 _isLoading.value = false
