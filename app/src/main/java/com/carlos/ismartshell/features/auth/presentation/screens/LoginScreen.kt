@@ -3,6 +3,7 @@ package com.carlos.ismartshell.features.auth.presentation.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -13,25 +14,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
-import com.carlos.ismartshell.ui.theme.*
+import com.carlos.ismartshell.ui.theme.Secondary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: (String) -> Unit,
+    onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val uiState = viewModel.uiState
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            onLoginSuccess(uiState.user?.role ?: "BUYER")
+            onLoginSuccess()
+            viewModel.resetState()
         }
     }
 
@@ -39,80 +42,70 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    colors = listOf(Primary, PrimaryVariant)
-                )
+                Brush.verticalGradient(colors = listOf(Secondary, Color(0xFF059669)))
             )
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.Center)
-                .padding(24.dp),
+                .padding(24.dp)
+                .align(Alignment.Center),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .padding(32.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "iSmartShell",
-                    style = MaterialTheme.typography.displaySmall.copy(
+                    text = "Bienvenido",
+                    style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Primary,
-                        letterSpacing = 1.sp
+                        color = Secondary
                     )
-                )
-                Text(
-                    text = "Bienvenido de nuevo",
-                    style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray)
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // Email
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = formState.email, // Dato del ViewModel
+                    onValueChange = viewModel::onEmailChange, // Evento al ViewModel
                     label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Primary) },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Secondary) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Password
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = formState.pass,
+                    onValueChange = viewModel::onPasswordChange,
                     label = { Text("Contraseña") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Primary) },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Secondary) },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(color = Primary)
+                    CircularProgressIndicator(color = Secondary)
                 } else {
                     Button(
-                        onClick = { viewModel.login(email, password) },
+                        onClick = { viewModel.login() }, // Sin parámetros
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
+                            .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = Secondary)
                     ) {
-                        Text(
-                            "Iniciar Sesión",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
+                        Text("Iniciar Sesión", style = MaterialTheme.typography.titleMedium)
                     }
                 }
 
@@ -120,19 +113,14 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = uiState.error ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(onClick = onNavigateToRegister) {
-                    Text(
-                        "¿No tienes cuenta? Regístrate aquí",
-                        color = PrimaryVariant,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Text("¿No tienes cuenta? Regístrate", color = Secondary)
                 }
             }
         }

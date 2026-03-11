@@ -1,6 +1,5 @@
 package com.carlos.ismartshell.features.seller.presentation.screens
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,37 +12,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.seller.presentation.viewmodels.CreateStoreViewModel
 import com.carlos.ismartshell.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
-    var name by remember { mutableStateOf("") }
-    var slug by remember { mutableStateOf("") }
-    var desc by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var lat by remember { mutableStateOf("") }
-    var lng by remember { mutableStateOf("") }
+    // 1. Recolección de estados suscritos al ViewModel
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
 
-    val uiState = viewModel.uiState
-    val stores = viewModel.storesList
-    val isEditing = viewModel.isEditing
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            viewModel.resetSuccessFlag()
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        "Panel de Vendedor",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
+                    Text("Panel de Vendedor", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Primary,
@@ -59,7 +53,7 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Sección de Formulario (Card)
+            // --- Sección de Formulario (Estado suscrito al formState) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -69,73 +63,73 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = if (isEditing) Icons.Default.Edit else Icons.Default.AddBusiness,
+                            imageVector = if (uiState.isEditing) Icons.Default.Edit else Icons.Default.AddBusiness,
                             contentDescription = null,
-                            tint = if (isEditing) Color(0xFFE65100) else Primary
+                            tint = if (uiState.isEditing) Color(0xFFE65100) else Primary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (isEditing) "Actualizar Tienda" else "Nueva Tienda",
+                            text = if (uiState.isEditing) "Actualizar Tienda" else "Nueva Tienda",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Campo: Nombre
                     OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
+                        value = formState.name,
+                        onValueChange = viewModel::onNameChange,
                         label = { Text("Nombre de la tienda") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         leadingIcon = { Icon(Icons.Default.Storefront, null, tint = Primary) }
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
+                    // Campo: Slug
                     OutlinedTextField(
-                        value = slug,
-                        onValueChange = { slug = it },
+                        value = formState.slug,
+                        onValueChange = viewModel::onSlugChange,
                         label = { Text("Slug (ej: mi-tienda)") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
+                    // Campo: Descripción
                     OutlinedTextField(
-                        value = desc,
-                        onValueChange = { desc = it },
+                        value = formState.description,
+                        onValueChange = viewModel::onDescChange,
                         label = { Text("Descripción") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
+                    // Campo: Dirección
                     OutlinedTextField(
-                        value = address,
-                        onValueChange = { address = it },
+                        value = formState.address,
+                        onValueChange = viewModel::onAddressChange,
                         label = { Text("Dirección física") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         shape = RoundedCornerShape(12.dp),
                         leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = Primary) }
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Campos: Latitud y Longitud
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         OutlinedTextField(
-                            value = lat,
-                            onValueChange = { lat = it },
+                            value = formState.lat,
+                            onValueChange = viewModel::onLatChange,
                             label = { Text("Latitud") },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             shape = RoundedCornerShape(12.dp)
                         )
                         OutlinedTextField(
-                            value = lng,
-                            onValueChange = { lng = it },
+                            value = formState.lng,
+                            onValueChange = viewModel::onLngChange,
                             label = { Text("Longitud") },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -145,29 +139,29 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    // Botones de Acción
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
-                            onClick = {
-                                viewModel.saveStore(name, slug, desc, address, lat, lng)
-                                name = ""; slug = ""; desc = ""; address = ""; lat = ""; lng = ""
-                            },
+                            onClick = { viewModel.saveStore() },
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isEditing) Color(0xFFE65100) else Primary
-                            )
+                                containerColor = if (uiState.isEditing) Color(0xFFE65100) else Primary
+                            ),
+                            enabled = !uiState.isLoading
                         ) {
-                            Icon(Icons.Default.Save, null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (isEditing) "Actualizar" else "Guardar")
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                            } else {
+                                Icon(Icons.Default.Save, null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(if (uiState.isEditing) "Actualizar" else "Guardar")
+                            }
                         }
 
-                        if (isEditing) {
+                        if (uiState.isEditing) {
                             OutlinedButton(
-                                onClick = {
-                                    viewModel.resetForm()
-                                    name = ""; slug = ""; desc = ""; address = ""; lat = ""; lng = ""
-                                },
+                                onClick = { viewModel.cancelEditing() },
                                 modifier = Modifier.weight(0.5f).height(48.dp),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -176,7 +170,6 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
                         }
                     }
 
-                    if (uiState.isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), color = Primary)
                     if (uiState.error != null) {
                         Text(
                             text = uiState.error ?: "",
@@ -189,23 +182,15 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-
-            Text(
-                text = "Tus Tiendas Registradas",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = OnBackground
-                )
-            )
-
+            Text("Tus Tiendas Registradas", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(12.dp))
 
+            // --- Lista de Tiendas ---
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(stores) { store ->
+                items(uiState.stores) { store ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
@@ -228,23 +213,11 @@ fun CreateStoreScreen(viewModel: CreateStoreViewModel) {
                             Spacer(modifier = Modifier.width(16.dp))
 
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = store.name,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                )
-                                Text(
-                                    text = store.address,
-                                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
-                                )
+                                Text(text = store.name, fontWeight = FontWeight.Bold)
+                                Text(text = store.address, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                             }
 
-                            IconButton(onClick = {
-                                viewModel.onEditSelected(store)
-                                name = store.name
-                                desc = store.description
-                                address = store.address
-
-                            }) {
+                            IconButton(onClick = { viewModel.onEditSelected(store) }) {
                                 Icon(Icons.Default.Edit, "Editar", tint = Primary)
                             }
 

@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.RegisterViewModel
 import com.carlos.ismartshell.ui.theme.*
 
@@ -28,19 +28,16 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var fullName by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("BUYER") }
+    // 1. Recolectamos AMBOS estados del ViewModel
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
 
-    val uiState = viewModel.uiState
     val scrollState = rememberScrollState()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             onRegisterSuccess()
+            viewModel.resetState()
         }
     }
 
@@ -82,20 +79,23 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Email
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = formState.email, // Leemos del formState
+                    onValueChange = viewModel::onEmailChange, // Delegamos al ViewModel
                     label = { Text("Email") },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Secondary) },
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // Password
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = formState.pass,
+                    onValueChange = viewModel::onPasswordChange,
                     label = { Text("Contraseña") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Secondary) },
                     visualTransformation = PasswordVisualTransformation(),
@@ -105,9 +105,10 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // Username
                 OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
+                    value = formState.username,
+                    onValueChange = viewModel::onUsernameChange,
                     label = { Text("Usuario") },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Secondary) },
                     modifier = Modifier.fillMaxWidth(),
@@ -116,9 +117,10 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // Full Name
                 OutlinedTextField(
-                    value = fullName,
-                    onValueChange = { fullName = it },
+                    value = formState.fullName,
+                    onValueChange = viewModel::onFullNameChange,
                     label = { Text("Nombre Completo") },
                     leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null, tint = Secondary) },
                     modifier = Modifier.fillMaxWidth(),
@@ -127,9 +129,10 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // Phone
                 OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it },
+                    value = formState.phone,
+                    onValueChange = viewModel::onPhoneChange,
                     label = { Text("Teléfono") },
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = Secondary) },
                     modifier = Modifier.fillMaxWidth(),
@@ -140,30 +143,30 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    "¿Cuál será tu rol?",
+                    text = "¿Cuál será tu rol?",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold, color = OnSurface),
                     modifier = Modifier.align(Alignment.Start)
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     FilterChip(
-                        selected = selectedRole == "BUYER",
-                        onClick = { selectedRole = "BUYER" },
+                        selected = formState.role == "BUYER",
+                        onClick = { viewModel.onRoleChange("BUYER") },
                         label = { Text("Comprador") },
-                        leadingIcon = if (selectedRole == "BUYER") {
+                        leadingIcon = if (formState.role == "BUYER") {
                             { Icon(Icons.Default.Check, contentDescription = null) }
                         } else null
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+
                     FilterChip(
-                        selected = selectedRole == "SELLER",
-                        onClick = { selectedRole = "SELLER" },
+                        selected = formState.role == "SELLER",
+                        onClick = { viewModel.onRoleChange("SELLER") },
                         label = { Text("Vendedor") },
-                        leadingIcon = if (selectedRole == "SELLER") {
+                        leadingIcon = if (formState.role == "SELLER") {
                             { Icon(Icons.Default.Check, contentDescription = null) }
                         } else null
                     )
@@ -175,7 +178,7 @@ fun RegisterScreen(
                     CircularProgressIndicator(color = Secondary)
                 } else {
                     Button(
-                        onClick = { viewModel.register(email, password, selectedRole, username, fullName, phone) },
+                        onClick = { viewModel.register() }, // Ya no pasamos parámetros
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -191,12 +194,21 @@ fun RegisterScreen(
 
                 if (uiState.error != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = uiState.error ?: "", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = uiState.error ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
                 TextButton(onClick = onBackToLogin) {
-                    Text("¿Ya tienes cuenta? Inicia Sesión", color = Secondary, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "¿Ya tienes cuenta? Inicia Sesión",
+                        color = Secondary,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }

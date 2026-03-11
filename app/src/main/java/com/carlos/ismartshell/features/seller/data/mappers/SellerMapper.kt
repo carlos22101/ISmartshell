@@ -9,7 +9,7 @@ fun SellerStoreDto.toDomain(): SellerStore {
         name = name,
         description = description ?: "",
         address = address ?: "",
-        slug = slug,
+        slug = slug ?: "",
         lat = lat,
         lng = lng
     )
