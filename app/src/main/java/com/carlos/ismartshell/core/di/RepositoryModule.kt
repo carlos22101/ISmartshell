@@ -2,7 +2,9 @@ package com.carlos.ismartshell.core.di
 
 import com.carlos.ismartshell.features.auth.data.repositories.AuthRepositoryImpl
 import com.carlos.ismartshell.features.auth.domain.repositories.AuthRepository
+import com.carlos.ismartshell.features.buyer.data.repositories.QrScanRepositoryImpl
 import com.carlos.ismartshell.features.buyer.data.repositories.StoreRepositoryImpl
+import com.carlos.ismartshell.features.buyer.domain.repositories.QrScanRepository
 import com.carlos.ismartshell.features.buyer.domain.repositories.StoreRepository
 import com.carlos.ismartshell.features.seller.data.repositories.SellerRepositoryImpl
 import com.carlos.ismartshell.features.seller.domain.repositories.SellerRepository
@@ -28,4 +30,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSellerRepository(impl: SellerRepositoryImpl): SellerRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindQrScanRepository(impl: QrScanRepositoryImpl): QrScanRepository
 }
