@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.carlos.ismartshell.ISmartShellApplication
 import com.carlos.ismartshell.features.auth.di.AuthModule
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.RegisterViewModel

@@ -7,6 +7,7 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.3"
 kotlin = "2.0.21"
+ksp = "2.0.21-1.0.25"
 composeBom = "2024.09.00"
 lifecycleViewmodelCompose = "2.10.0"
 retrofit = "3.0.0"
@@ -42,4 +43,5 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
