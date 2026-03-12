@@ -3,6 +3,7 @@ package com.carlos.ismartshell.core.di
 import android.content.Context
 import com.carlos.ismartshell.core.managers.LocationManager
 import com.carlos.ismartshell.core.managers.QrScannerManager
+import com.carlos.ismartshell.core.managers.VibrationManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,4 +24,9 @@ object ManagerModule {
     @Singleton
     fun provideLocationManager(@ApplicationContext context: Context): LocationManager =
         LocationManager(context)
+
+    @Provides
+    @Singleton
+    fun provideVibrationManager(@ApplicationContext context: Context): VibrationManager =
+        VibrationManager(context)
 }
