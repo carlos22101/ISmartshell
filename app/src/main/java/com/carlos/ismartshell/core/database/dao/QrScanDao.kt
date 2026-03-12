@@ -14,8 +14,7 @@ interface QrScanDao {
     fun getAllScans(): Flow<List<QrScanEntity>>
 
     @Query("SELECT * FROM qr_scan_history ORDER BY scanned_at DESC LIMIT :limit")
-    fun getRecentScans(limit: Int = 10): Flow<List<QrScanEntity>>
-
+    fun getRecentScans(limit: Int): Flow<List<QrScanEntity>>
     @Query("SELECT * FROM qr_scan_history WHERE raw_value LIKE '%' || :query || '%' ORDER BY scanned_at DESC")
     fun searchScans(query: String): Flow<List<QrScanEntity>>
 

@@ -1,0 +1,53 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "4b31cb8a5931e6507fc2cc8bff43f2a2",
+    "entities": [
+      {
+        "tableName": "qr_scan_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `raw_value` TEXT NOT NULL, `scanned_at` INTEGER NOT NULL, `store_name` TEXT, `store_id` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawValue",
+            "columnName": "raw_value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scannedAt",
+            "columnName": "scanned_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "storeName",
+            "columnName": "store_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "storeId",
+            "columnName": "store_id",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4b31cb8a5931e6507fc2cc8bff43f2a2')"
+    ]
+  }
+}
