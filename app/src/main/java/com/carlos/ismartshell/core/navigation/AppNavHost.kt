@@ -5,13 +5,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.hilt.navigation.compose.hiltViewModel          // ← nuevo import
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.carlos.ismartshell.features.auth.presentation.screens.LoginScreen
 import com.carlos.ismartshell.features.auth.presentation.screens.RegisterScreen
 import com.carlos.ismartshell.features.buyer.presentation.screens.HomeBuyerScreen
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreScreen
 import com.carlos.ismartshell.features.buyer.presentation.screens.QrScannerScreen
 import com.carlos.ismartshell.features.buyer.presentation.screens.StoreMapScreen
+import com.carlos.ismartshell.features.buyer.presentation.screens.QrHistoryScreen
+import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
 
 @Composable
 fun AppNavHost() {
@@ -20,10 +22,12 @@ fun AppNavHost() {
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
+            val viewModel: LoginViewModel = hiltViewModel()
             LoginScreen(
-                viewModel = hiltViewModel(),
-                onLoginSuccess = { role ->
-                    Log.d("DEBUG_ROL", "Rol recibido: '$role'")
+                viewModel = viewModel,
+                onLoginSuccess = {
+                    val role = viewModel.uiState.user?.role ?: ""
+                    Log.d("DEBUG_ROL", "Rol obtenido del VM: '$role'")
                     val dest = if (role.equals("SELLER", ignoreCase = true)) "create_store" else "home_buyer"
                     navController.navigate(dest) { popUpTo("login") { inclusive = true } }
                 },
@@ -43,7 +47,8 @@ fun AppNavHost() {
             HomeBuyerScreen(
                 viewModel = hiltViewModel(),
                 onNavigateToQr = { navController.navigate("qr_scanner") },
-                onNavigateToMap = { storeId -> navController.navigate("store_map/$storeId") }
+                onNavigateToMap = { storeId -> navController.navigate("store_map/$storeId") },
+                onNavigateToHistory = { navController.navigate("qr_history") }
             )
         }
 
@@ -58,6 +63,14 @@ fun AppNavHost() {
                     Log.d("QR", "Código escaneado: $value")
                     navController.popBackStack()
                 },
+                onBack = { navController.popBackStack() },
+                onNavigateToHistory = { navController.navigate("qr_history") }
+            )
+        }
+
+        composable("qr_history") {
+            QrHistoryScreen(
+                viewModel = hiltViewModel(),
                 onBack = { navController.popBackStack() }
             )
         }

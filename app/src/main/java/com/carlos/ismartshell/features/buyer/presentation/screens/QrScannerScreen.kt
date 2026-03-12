@@ -5,6 +5,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,7 +24,8 @@ import com.google.accompanist.permissions.*
 fun QrScannerScreen(
     viewModel: QrScannerViewModel,
     onQrResult: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToHistory: () -> Unit
 ) {
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -42,10 +44,16 @@ fun QrScannerScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
                 },
+                actions = {
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(Icons.Default.History, contentDescription = "Historial")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Primary,
                     titleContentColor = androidx.compose.ui.graphics.Color.White,
-                    navigationIconContentColor = androidx.compose.ui.graphics.Color.White
+                    navigationIconContentColor = androidx.compose.ui.graphics.Color.White,
+                    actionIconContentColor = androidx.compose.ui.graphics.Color.White
                 )
             )
         }

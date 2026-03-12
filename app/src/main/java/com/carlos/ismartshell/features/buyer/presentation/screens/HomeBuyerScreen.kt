@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
@@ -22,7 +23,8 @@ import com.carlos.ismartshell.ui.theme.Primary
 fun HomeBuyerScreen(
     viewModel: HomeBuyerViewModel,
     onNavigateToQr: () -> Unit,
-    onNavigateToMap: (Int) -> Unit
+    onNavigateToMap: (Int) -> Unit,
+    onNavigateToHistory: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -31,6 +33,13 @@ fun HomeBuyerScreen(
             TopAppBar(
                 title = { Text("Tiendas Disponibles", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "Historial",
+                            tint = Primary
+                        )
+                    }
                     IconButton(onClick = onNavigateToQr) {
                         Icon(
                             imageVector = Icons.Default.QrCodeScanner,
