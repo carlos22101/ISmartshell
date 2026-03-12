@@ -13,14 +13,32 @@ class SellerRepositoryImpl @Inject constructor(
 ) : SellerRepository {
 
     override suspend fun getStores(): List<SellerStore> =
-        apiService.getStores().map { SellerStore(it.id, it.name, it.description, it.address) }
+        apiService.getStores().map { 
+            SellerStore(
+                id = it.id, 
+                name = it.name, 
+                description = it.description, 
+                address = it.address,
+                slug = it.slug,
+                lat = it.lat,
+                lng = it.lng
+            ) 
+        }
 
     override suspend fun createStore(request: CreateStoreRequest): SellerStore =
         apiService.createStore(request).toDomain()
 
     override suspend fun getStoreDetail(id: Int): SellerStore {
         val dto = apiService.getStoreDetail(id)
-        return SellerStore(dto.id, dto.name, dto.description, dto.address)
+        return SellerStore(
+            id = dto.id, 
+            name = dto.name, 
+            description = dto.description, 
+            address = dto.address,
+            slug = dto.slug,
+            lat = dto.lat,
+            lng = dto.lng
+        )
     }
 
     override suspend fun updateStore(id: Int, request: UpdateStoreRequest): SellerStore =

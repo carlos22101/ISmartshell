@@ -2,6 +2,8 @@ package com.carlos.ismartshell.core.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,10 +25,12 @@ fun AppNavHost() {
 
         composable("login") {
             val viewModel: LoginViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsState()
+            
             LoginScreen(
                 viewModel = viewModel,
                 onLoginSuccess = {
-                    val role = viewModel.uiState.user?.role ?: ""
+                    val role = uiState.user?.role ?: ""
                     Log.d("DEBUG_ROL", "Rol obtenido del VM: '$role'")
                     val dest = if (role.equals("SELLER", ignoreCase = true)) "create_store" else "home_buyer"
                     navController.navigate(dest) { popUpTo("login") { inclusive = true } }

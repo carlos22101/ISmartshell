@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.LoginViewModel
 import com.carlos.ismartshell.ui.theme.Secondary
+import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

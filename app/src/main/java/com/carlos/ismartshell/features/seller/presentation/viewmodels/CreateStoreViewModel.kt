@@ -1,8 +1,5 @@
 package com.carlos.ismartshell.features.seller.presentation.viewmodels
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlos.ismartshell.core.local.TokenManager
@@ -10,6 +7,10 @@ import com.carlos.ismartshell.features.seller.domain.entities.SellerStore
 import com.carlos.ismartshell.features.seller.domain.usecases.*
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,75 +24,105 @@ class CreateStoreViewModel @Inject constructor(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
-    var uiState by mutableStateOf(CreateStoreUiState())
-        private set
+    private val _uiState = MutableStateFlow(CreateStoreUiState())
+    val uiState: StateFlow<CreateStoreUiState> = _uiState.asStateFlow()
 
-    var storesList by mutableStateOf<List<SellerStore>>(emptyList())
-        private set
+    private val _formState = MutableStateFlow(StoreFormState())
+    val formState: StateFlow<StoreFormState> = _formState.asStateFlow()
 
-    var isEditing by mutableStateOf(false)
-        private set
+    private var currentStoreId: Int? = null
 
-    var currentStoreId by mutableStateOf<Int?>(null)
-        private set
+    init {
+        loadStores()
+    }
 
-    init { loadStores() }
+    fun onNameChange(v: String) = _formState.update { it.copy(name = v) }
+    fun onSlugChange(v: String) = _formState.update { it.copy(slug = v) }
+    fun onDescChange(v: String) = _formState.update { it.copy(description = v) }
+    fun onAddressChange(v: String) = _formState.update { it.copy(address = v) }
+    fun onLatChange(v: String) = _formState.update { it.copy(lat = v) }
+    fun onLngChange(v: String) = _formState.update { it.copy(lng = v) }
 
     fun loadStores() {
         viewModelScope.launch {
             try {
-                storesList = getStoresUseCase()
+                val stores = getStoresUseCase()
+                _uiState.update { it.copy(stores = stores, error = null) }
             } catch (e: Exception) {
-                uiState = uiState.copy(error = "Error al cargar lista: ${e.message}")
+                _uiState.update { it.copy(error = "Error al cargar: ${e.message}") }
             }
         }
     }
 
-    fun resetForm() {
-        isEditing = false
-        currentStoreId = null
-        uiState = CreateStoreUiState()
-    }
-
     fun onEditSelected(store: SellerStore) {
-        isEditing = true
         currentStoreId = store.id
+        _formState.update { StoreFormState(
+            name = store.name,
+            slug = store.slug,
+            description = store.description,
+            address = store.address,
+            lat = store.lat?.toString() ?: "",
+            lng = store.lng?.toString() ?: ""
+        )}
+        _uiState.update { it.copy(isEditing = true) }
     }
 
-    fun saveStore(name: String, slug: String, desc: String, address: String, lat: String, lng: String) {
+    fun cancelEditing() {
+        currentStoreId = null
+        _formState.update { StoreFormState() }
+        _uiState.update { it.copy(isEditing = false, error = null) }
+    }
+
+    fun saveStore() {
         viewModelScope.launch {
-            uiState = CreateStoreUiState(isLoading = true)
+            _uiState.update { it.copy(isLoading = true) }
             try {
-                val latDouble = lat.toDoubleOrNull() ?: 0.0
-                val lngDouble = lng.toDoubleOrNull() ?: 0.0
+                val f = _formState.value
+                val lat = f.lat.toDoubleOrNull() ?: 0.0
+                val lng = f.lng.toDoubleOrNull() ?: 0.0
                 val sellerId = tokenManager.getUserId()
+                
+                if (sellerId == -1) {
+                    _uiState.update { it.copy(isLoading = false, error = "Sesión no válida") }
+                    return@launch
+                }
 
-                if (sellerId == -1) { uiState = CreateStoreUiState(error = "Sesión no válida"); return@launch }
+                if (_uiState.value.isEditing && currentStoreId != null) {
+                    updateStoreUseCase(currentStoreId!!, f.name, f.slug, f.description, f.address, lat, lng)
+                } else {
+                    createStoreUseCase(sellerId, f.name, f.slug, f.description, f.address, lat, lng)
+                }
 
-                if (isEditing && currentStoreId != null)
-                    updateStoreUseCase(currentStoreId!!, name, slug, desc, address, latDouble, lngDouble)
-                else
-                    createStoreUseCase(sellerId, name, slug, desc, address, latDouble, lngDouble)
-
-                uiState = CreateStoreUiState(isSuccess = true)
                 loadStores()
-                resetForm()
+                cancelEditing()
+                _uiState.update { it.copy(isSuccess = true, isLoading = false) }
             } catch (e: Exception) {
-                uiState = CreateStoreUiState(error = e.message)
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
     fun deleteStore(id: Int) {
         viewModelScope.launch {
-            uiState = CreateStoreUiState(isLoading = true)
+            _uiState.update { it.copy(isLoading = true) }
             try {
                 deleteStoreUseCase(id)
                 loadStores()
-                uiState = CreateStoreUiState(isSuccess = true)
+                _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
-                uiState = CreateStoreUiState(error = e.message)
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
+
+    fun resetSuccessFlag() = _uiState.update { it.copy(isSuccess = false) }
 }
+
+data class StoreFormState(
+    val name: String = "",
+    val slug: String = "",
+    val description: String = "",
+    val address: String = "",
+    val lat: String = "",
+    val lng: String = ""
+)

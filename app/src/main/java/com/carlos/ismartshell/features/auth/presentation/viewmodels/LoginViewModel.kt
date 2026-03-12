@@ -1,13 +1,14 @@
 package com.carlos.ismartshell.features.auth.presentation.viewmodels
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlos.ismartshell.features.auth.domain.usecases.LoginUseCase
 import com.carlos.ismartshell.features.auth.presentation.screens.AuthUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,18 +17,41 @@ class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase
 ) : ViewModel() {
 
-    var uiState by mutableStateOf(AuthUiState())
-        private set
+    private val _uiState = MutableStateFlow(AuthUiState())
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    fun login(email: String, pass: String) {
+    private val _formState = MutableStateFlow(LoginFormState())
+    val formState: StateFlow<LoginFormState> = _formState.asStateFlow()
+
+    fun onEmailChange(email: String) {
+        _formState.update { it.copy(email = email) }
+    }
+
+    fun onPasswordChange(pass: String) {
+        _formState.update { it.copy(pass = pass) }
+    }
+
+    fun login() {
+        val email = _formState.value.email
+        val pass = _formState.value.pass
+        
         viewModelScope.launch {
-            uiState = AuthUiState(isLoading = true)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val user = loginUseCase(email, pass)
-                uiState = AuthUiState(user = user, isSuccess = true)
+                _uiState.update { it.copy(user = user, isSuccess = true, isLoading = false) }
             } catch (e: Exception) {
-                uiState = AuthUiState(error = e.message ?: "Error desconocido")
+                _uiState.update { it.copy(error = e.message ?: "Error desconocido", isLoading = false) }
             }
         }
     }
+
+    fun resetState() {
+        _uiState.update { AuthUiState() }
+    }
 }
+
+data class LoginFormState(
+    val email: String = "",
+    val pass: String = ""
+)

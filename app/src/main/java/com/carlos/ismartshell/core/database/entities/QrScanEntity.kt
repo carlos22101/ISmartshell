@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "qr_scan_history")
 data class QrScanEntity(
     @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
     val id: Int = 0,
 
     @ColumnInfo(name = "raw_value")

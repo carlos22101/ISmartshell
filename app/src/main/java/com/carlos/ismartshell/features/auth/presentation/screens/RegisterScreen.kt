@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.auth.presentation.viewmodels.RegisterViewModel
 import com.carlos.ismartshell.ui.theme.*
-
+import androidx.compose.runtime.getValue
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel,

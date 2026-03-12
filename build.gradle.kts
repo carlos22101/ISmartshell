@@ -3,6 +3,5 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp) apply false
-    // Perfecto, solo usa esta línea para Hilt:
-    id("com.google.dagger.hilt.android") version "2.53" apply false
+    alias(libs.plugins.hilt) apply false
 }

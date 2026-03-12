@@ -8,3 +8,12 @@ data class AuthUiState(
     val error: String? = null,
     val isSuccess: Boolean = false
 )
+
+data class RegisterFormState(
+    val email: String = "",
+    val pass: String = "",
+    val username: String = "",
+    val fullName: String = "",
+    val phone: String = "",
+    val role: String = "BUYER"
+)
