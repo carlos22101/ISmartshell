@@ -1,71 +1,48 @@
 package com.carlos.ismartshell.core.managers
 
+import android.Manifest
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.annotation.RequiresPermission
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 @Singleton
 class VibrationManager @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
-    private val vibrator: Vibrator by lazy {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            manager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
+    private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        manager.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
 
-
-    fun qrSuccess() {
+    /** Vibración corta de confirmación (ej. QR escaneado) */
+    @RequiresPermission(Manifest.permission.VIBRATE)
+    fun vibrateSingle() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createWaveform(
-                    longArrayOf(0, 80, 60, 80),   // delay, on, off, on
-                    intArrayOf(0, 180, 0, 120),   // amplitudes (0 = silencio)
-                    -1                             // sin repetición
-                )
-            )
+            vibrator.vibrate(VibrationEffect.createOneShot(120, VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(longArrayOf(0, 80, 60, 80), -1)
+            vibrator.vibrate(120)
         }
     }
 
-
-    fun error() {
+    /** Vibración doble para error */
+    @RequiresPermission(Manifest.permission.VIBRATE)
+    fun vibrateError() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(400, VibrationEffect.DEFAULT_AMPLITUDE)
-            )
+            val pattern = longArrayOf(0, 100, 100, 100)
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(400)
+            vibrator.vibrate(longArrayOf(0, 100, 100, 100), -1)
         }
     }
-
-    /**
-     * Tap corto — feedback ligero para interacciones de UI.
-     * Patrón: 40ms ON
-     */
-    fun light() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(40, 100)
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(40)
-        }
-    }
-
-    /** Detiene cualquier vibración en curso. */
-    fun cancel() = vibrator.cancel()
 }

@@ -1,8 +1,10 @@
 package com.carlos.ismartshell.features.auth.domain.usecases
+
+import com.carlos.ismartshell.features.auth.data.repositories.AuthRepository
 import com.carlos.ismartshell.features.auth.domain.entities.User
-import com.carlos.ismartshell.features.auth.domain.repositories.AuthRepository
 import javax.inject.Inject
 
-class LoginUseCase @Inject constructor(private val repository: AuthRepository) {
-    suspend operator fun invoke(email: String, pass: String): User = repository.login(email, pass)
+class LoginUseCase @Inject constructor(private val repo: AuthRepository) {
+    suspend operator fun invoke(email: String, password: String): Result<Pair<User, String>> =
+        repo.login(email, password)
 }

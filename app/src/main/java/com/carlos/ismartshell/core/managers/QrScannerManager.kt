@@ -1,14 +1,17 @@
 package com.carlos.ismartshell.core.managers
 
 import android.content.Context
+import androidx.annotation.OptIn
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
@@ -16,10 +19,15 @@ import javax.inject.Singleton
 
 @Singleton
 class QrScannerManager @Inject constructor(
-    private val context: Context
+    @field:ApplicationContext private val context: Context
 ) {
-    private var cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-    private var cameraProvider: ProcessCameraProvider? = null
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+
+    private val scanner = BarcodeScanning.getClient(
+        BarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .build()
+    )
 
     fun startScanning(
         lifecycleOwner: LifecycleOwner,
@@ -29,59 +37,48 @@ class QrScannerManager @Inject constructor(
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
         cameraProviderFuture.addListener({
-            cameraProvider = cameraProviderFuture.get()
+            val cameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
 
-            val barcodeScanner = BarcodeScanning.getClient()
-
-            val imageAnalyzer = ImageAnalysis.Builder()
+            val imageAnalysis = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
-                .also { analysis ->
-                    analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                        processImageProxy(barcodeScanner, imageProxy, onQrDetected)
-                    }
-                }
+
+            imageAnalysis.setAnalyzer(executor) { imageProxy ->
+                processImageProxy(imageProxy, onQrDetected)
+            }
 
             try {
-                cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
-                    imageAnalyzer
+                    imageAnalysis
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
         }, ContextCompat.getMainExecutor(context))
     }
 
-    fun stopScanning() {
-        cameraProvider?.unbindAll()
-        if (!cameraExecutor.isShutdown) cameraExecutor.shutdown()
-    }
-
-    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
-    private fun processImageProxy(
-        scanner: com.google.mlkit.vision.barcode.BarcodeScanner,
-        imageProxy: ImageProxy,
-        onQrDetected: (String) -> Unit
-    ) {
+    @OptIn(ExperimentalGetImage::class)
+    private fun processImageProxy(imageProxy: ImageProxy, onQrDetected: (String) -> Unit) {
         val mediaImage = imageProxy.image ?: run { imageProxy.close(); return }
-
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
 
         scanner.process(image)
             .addOnSuccessListener { barcodes ->
-                barcodes.firstOrNull { it.format == Barcode.FORMAT_QR_CODE }
-                    ?.rawValue
-                    ?.let { onQrDetected(it) }
+                barcodes.firstOrNull()?.rawValue?.let { onQrDetected(it) }
             }
             .addOnCompleteListener { imageProxy.close() }
+    }
+
+    fun shutdown() {
+        executor.shutdown()
+        scanner.close()
     }
 }

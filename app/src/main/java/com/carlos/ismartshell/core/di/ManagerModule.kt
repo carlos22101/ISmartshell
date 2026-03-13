@@ -15,18 +15,15 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object ManagerModule {
 
-    @Provides
-    @Singleton
-    fun provideQrScannerManager(@ApplicationContext context: Context): QrScannerManager =
-        QrScannerManager(context)
+    @Provides @Singleton
+    fun provideLocationManager(@ApplicationContext ctx: Context): LocationManager =
+        LocationManager(ctx)
 
-    @Provides
-    @Singleton
-    fun provideLocationManager(@ApplicationContext context: Context): LocationManager =
-        LocationManager(context)
+    @Provides @Singleton
+    fun provideQrScannerManager(@ApplicationContext ctx: Context): QrScannerManager =
+        QrScannerManager(ctx)
 
-    @Provides
-    @Singleton
-    fun provideVibrationManager(@ApplicationContext context: Context): VibrationManager =
-        VibrationManager(context)
+    @Provides @Singleton
+    fun provideVibrationManager(@ApplicationContext ctx: Context): VibrationManager =
+        VibrationManager(ctx)
 }

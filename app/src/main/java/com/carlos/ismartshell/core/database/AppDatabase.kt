@@ -7,8 +7,8 @@ import com.carlos.ismartshell.core.database.entities.QrScanEntity
 
 @Database(
     entities = [QrScanEntity::class],
-    version = 1,
-    exportSchema = true
+    version  = 1,
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun qrScanDao(): QrScanDao

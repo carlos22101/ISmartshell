@@ -3,18 +3,18 @@ package com.carlos.ismartshell.features.buyer.data.mappers
 import com.carlos.ismartshell.core.database.entities.QrScanEntity
 import com.carlos.ismartshell.features.buyer.domain.entities.QrScan
 
-fun QrScanEntity.toDomain() = QrScan(
-    id        = id,
-    rawValue  = rawValue,
-    scannedAt = scannedAt,
-    storeName = storeName,
-    storeId   = storeId
-)
+object QrScanMapper {
+    fun toDomain(entity: QrScanEntity) = QrScan(
+        id        = entity.id,
+        code      = entity.code,
+        label     = entity.label,
+        scannedAt = entity.scannedAt
+    )
 
-fun QrScan.toEntity() = QrScanEntity(
-    id        = id,
-    rawValue  = rawValue,
-    scannedAt = scannedAt,
-    storeName = storeName,
-    storeId   = storeId
-)
+    fun toEntity(domain: QrScan) = QrScanEntity(
+        id        = domain.id,
+        code      = domain.code,
+        label     = domain.label,
+        scannedAt = domain.scannedAt
+    )
+}

@@ -1,28 +1,56 @@
 package com.carlos.ismartshell.core.local
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TokenManager(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_prefs")
 
-    fun saveToken(token: String) {
-        prefs.edit().putString("jwt_token", token).apply()
+@Singleton
+class TokenManager @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    companion object {
+        private val KEY_TOKEN = stringPreferencesKey("jwt_token")
+        private val KEY_USER_ID = stringPreferencesKey("user_id")
+        private val KEY_USER_ROLE = stringPreferencesKey("user_role")
+        private val KEY_USER_NAME = stringPreferencesKey("user_name")
     }
 
-    fun getToken(): String? {
-        return prefs.getString("jwt_token", null)
+    suspend fun saveSession(token: String?, userId: String?, role: String?, name: String?) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_TOKEN]     = token ?: ""
+            prefs[KEY_USER_ID]   = userId ?: ""
+            prefs[KEY_USER_ROLE] = role ?: ""
+            prefs[KEY_USER_NAME] = name ?: ""
+        }
     }
 
-    fun saveUserId(userId: Int) {
-        prefs.edit().putInt("user_id", userId).apply()
-    }
+    suspend fun getToken(): String? =
+        context.dataStore.data.map { it[KEY_TOKEN] }.firstOrNull()
 
-    fun getUserId(): Int {
-        return prefs.getInt("user_id", -1)
-    }
+    suspend fun getUserId(): String? =
+        context.dataStore.data.map { it[KEY_USER_ID] }.firstOrNull()
 
-    fun clear() {
-        prefs.edit().clear().apply()
+    suspend fun getUserRole(): String? =
+        context.dataStore.data.map { it[KEY_USER_ROLE] }.firstOrNull()
+
+    val userRoleFlow: Flow<String?> =
+        context.dataStore.data.map { it[KEY_USER_ROLE] }
+
+    val isLoggedInFlow: Flow<Boolean> =
+        context.dataStore.data.map { it[KEY_TOKEN] }.map { !it.isNullOrBlank() }
+
+    suspend fun clearSession() {
+        context.dataStore.edit { it.clear() }
     }
 }

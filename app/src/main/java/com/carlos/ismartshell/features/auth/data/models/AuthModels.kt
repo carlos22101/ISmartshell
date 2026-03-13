@@ -2,37 +2,33 @@ package com.carlos.ismartshell.features.auth.data.models
 
 import com.google.gson.annotations.SerializedName
 
+object AuthModels {
 
-data class LoginRequest(
-    val email: String,
-    @SerializedName("password") val pass: String
-)
+    data class RegisterRequest(
+        val name: String,
+        val email: String,
+        val password: String,
+        val role: String
+    )
 
-data class RegisterRequest(
-    val email: String,
-    @SerializedName("password") val pass: String,
-    val role: String,
-    val username: String? = null,
-    @SerializedName("full_name") val fullName: String? = null,
-    val phone: String? = null
-)
-data class LoginResponseDto(
-    @SerializedName("access_token")
-    val accessToken: String,
+    data class LoginRequest(
+        val email: String,
+        val password: String
+    )
 
-    @SerializedName("token_type")
-    val tokenType: String,
+    data class UserDto(
+        @SerializedName("ID") val id: String? = null,
+        @SerializedName("Name") val name: String? = null,
+        @SerializedName("Email") val email: String? = null,
+        @SerializedName("Role") val role: String? = null,
+        @SerializedName("Active") val active: Boolean? = null,
+        @SerializedName("CreatedAt") val createdAt: String? = null
+    )
 
-    val user: UserDto
-)
-
-data class UserDto(
-    val id: Int,
-    val email: String,
-    val username: String,
-    val role: String,
-    @SerializedName("full_name")
-    val fullName: String,
-
-    val phone: String
-)
+    data class AuthData(
+        @SerializedName("user", alternate = ["User"]) val user: UserDto? = null,
+        @SerializedName("token", alternate = ["Token"]) val token: String? = null,
+        @SerializedName("Role") val flatRole: String? = null,
+        @SerializedName("ID") val flatId: String? = null
+    )
+}

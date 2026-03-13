@@ -4,140 +4,81 @@ import android.Manifest
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.StoreMapViewModel
-import com.carlos.ismartshell.ui.theme.Primary
-import com.google.accompanist.permissions.*
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun StoreMapScreen(
-    storeId: Int,
-    viewModel: StoreMapViewModel,
-    onBack: () -> Unit
+    businessId: String,
+    onBack: () -> Unit,
+    viewModel: StoreMapViewModel = hiltViewModel()
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    val storeLocation by viewModel.storeLocation.collectAsState()
-    val userLocation by viewModel.userLocation.collectAsState()
-    val store by viewModel.store.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
 
-    LaunchedEffect(storeId) { viewModel.loadStore(storeId) }
-
-    LaunchedEffect(locationPermission.status) {
-        if (locationPermission.status.isGranted) {
-            viewModel.startLocationTracking()
-        } else {
-            locationPermission.launchPermissionRequest()
-        }
-    }
-
-    val cameraPositionState = rememberCameraPositionState()
-
-    LaunchedEffect(storeLocation) {
-        storeLocation?.let { loc ->
-            cameraPositionState.animate(
-                CameraUpdateFactory.newCameraPosition(
-                    CameraPosition.fromLatLngZoom(LatLng(loc.lat, loc.lng), 15f)
-                )
-            )
-        }
+    LaunchedEffect(businessId) {
+        if (!locationPermission.status.isGranted) locationPermission.launchPermissionRequest()
+        viewModel.loadStore(businessId)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(store?.name ?: "Mapa de Tienda", fontWeight = FontWeight.Bold) },
+                title = { Text(state.store?.name ?: "Mapa") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Atrás")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
-        floatingActionButton = {
-            if (locationPermission.status.isGranted && userLocation != null) {
-                FloatingActionButton(
-                    onClick = {
-                        userLocation?.let { loc ->
-                            viewModel.centerOnUser(cameraPositionState)
-                        }
-                    },
-                    containerColor = Primary
-                ) {
-                    Icon(Icons.Default.MyLocation, "Mi ubicación", tint = Color.White)
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Volver") }
                 }
-            }
+            )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Primary)
-            } else {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    properties = MapProperties(
-                        isMyLocationEnabled = locationPermission.status.isGranted
-                    ),
-                    uiSettings = MapUiSettings(myLocationButtonEnabled = false)
-                ) {
-                    storeLocation?.let { loc ->
-                        Marker(
-                            state = MarkerState(position = LatLng(loc.lat, loc.lng)),
-                            title = store?.name ?: "Tienda",
-                            snippet = store?.address ?: "",
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)
-                        )
-                    }
-                }
+        if (state.isLoading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
+        state.store?.let { store ->
+            val storeLatLng = LatLng(store.latitude, store.longitude)
+            val cameraPositionState = rememberCameraPositionState {
+                position = CameraPosition.fromLatLngZoom(storeLatLng, 15f)
             }
 
-            if (locationPermission.status.isGranted && userLocation != null && storeLocation != null) {
-                val distance = viewModel.calculateDistance()
-                if (distance != null) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        color = Primary,
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                        tonalElevation = 4.dp
-                    ) {
-                        Text(
-                            text = if (distance < 1000)
-                                "📍 A ${distance.toInt()} metros de la tienda"
-                            else
-                                "📍 A ${"%.1f".format(distance / 1000)} km de la tienda",
-                            modifier = Modifier.padding(16.dp),
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+            GoogleMap(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(isMyLocationEnabled = locationPermission.status.isGranted),
+                uiSettings = MapUiSettings(myLocationButtonEnabled = true)
+            ) {
+                // Marcador principal del negocio
+                Marker(
+                    state = MarkerState(position = storeLatLng),
+                    title = store.name,
+                    snippet = store.type
+                )
+
+                // Puntos de entrega alternativos
+                store.deliveryPoints.forEach { dp ->
+                    Marker(
+                        state = MarkerState(position = LatLng(dp.latitude, dp.longitude)),
+                        title = dp.name,
+                        snippet = "Punto de entrega"
+                    )
                 }
             }
         }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { viewModel.stopLocationTracking() }
     }
 }

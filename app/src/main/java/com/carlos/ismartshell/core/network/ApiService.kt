@@ -1,48 +1,93 @@
 package com.carlos.ismartshell.core.network
 
-import com.carlos.ismartshell.features.auth.data.models.LoginRequest
-import com.carlos.ismartshell.features.auth.data.models.LoginResponseDto
-import com.carlos.ismartshell.features.auth.data.models.RegisterRequest
-import com.carlos.ismartshell.features.auth.data.models.UserDto
+import com.carlos.ismartshell.features.auth.data.models.AuthModels
 import com.carlos.ismartshell.features.buyer.data.models.BuyerStoreDto
-import com.carlos.ismartshell.features.seller.data.models.CreateStoreRequest
-import com.carlos.ismartshell.features.seller.data.models.SellerStoreDto
-import com.carlos.ismartshell.features.seller.data.models.UpdateStoreRequest
+import com.carlos.ismartshell.features.seller.data.models.SellerModels
+import retrofit2.Response
 import retrofit2.http.*
+
+// Wrapper genérico que refleja {"data": T, "error": "..."} del API Go
+data class ApiResponse<T>(val data: T? = null, val error: String? = null)
 
 interface ApiService {
 
-    @POST("api/auth/register")
-    suspend fun register(@Body request: RegisterRequest): LoginResponseDto
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    @POST("api/v1/auth/register")
+    suspend fun register(@Body body: AuthModels.RegisterRequest): Response<ApiResponse<AuthModels.AuthData>>
 
-    @POST("api/auth/login")
-    suspend fun login(@Body request: LoginRequest): LoginResponseDto
+    @POST("api/v1/auth/login")
+    suspend fun login(@Body body: AuthModels.LoginRequest): Response<ApiResponse<AuthModels.AuthData>>
 
-    @GET("api/auth/me")
-    suspend fun getMe(): UserDto
+    @GET("api/v1/users/me")
+    suspend fun me(): Response<ApiResponse<AuthModels.UserDto>>
 
-    @GET("api/stores")
-    suspend fun getStores(): List<BuyerStoreDto>
+    // ── Businesses ────────────────────────────────────────────────────────────
+    @GET("api/v1/businesses")
+    suspend fun getNearbyBusinesses(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+        @Query("radius") radiusKm: Double = 5.0
+    ): Response<ApiResponse<List<BuyerStoreDto.BusinessDto>>>
 
-    @GET("api/stores/{id}")
-    suspend fun getStoreDetail(@Path("id") id: Int): BuyerStoreDto
+    @GET("api/v1/businesses/{id}")
+    suspend fun getBusinessById(@Path("id") id: String): Response<ApiResponse<BuyerStoreDto.BusinessDto>>
 
-    @POST("api/stores")
-    suspend fun createStore(@Body store: CreateStoreRequest): SellerStoreDto
+    @GET("api/v1/businesses/mine")
+    suspend fun getMyBusinesses(): Response<ApiResponse<List<SellerModels.SellerBusinessDto>>>
 
+    @POST("api/v1/businesses")
+    suspend fun createBusiness(@Body body: SellerModels.CreateBusinessRequest): Response<ApiResponse<SellerModels.SellerBusinessDto>>
 
-    @PUT("api/stores/{store_id}")
-    suspend fun updateStore(
-        @Path("store_id") id: Int, 
-        @Body store: UpdateStoreRequest
-    ): SellerStoreDto
+    @PUT("api/v1/businesses/{id}")
+    suspend fun updateBusiness(
+        @Path("id") id: String,
+        @Body body: SellerModels.UpdateBusinessRequest
+    ): Response<ApiResponse<SellerModels.SellerBusinessDto>>
 
-    @DELETE("api/stores/{id}")
-    suspend fun deleteStore(@Path("id") id: Int): Unit
+    @DELETE("api/v1/businesses/{id}")
+    suspend fun deleteBusiness(@Path("id") id: String): Response<Unit>
 
-    @POST("api/stores/{id}/points")
-    suspend fun addDeliveryPoint(@Path("id") id: Int, @Body point: Map<String, Any>): Any
+    @POST("api/v1/businesses/{id}/delivery-points")
+    suspend fun addDeliveryPoint(
+        @Path("id") businessId: String,
+        @Body body: SellerModels.DeliveryPointRequest
+    ): Response<ApiResponse<BuyerStoreDto.DeliveryPointDto>>
 
-    @GET("api/stores/{id}/points")
-    suspend fun getDeliveryPoints(@Path("id") id: Int): List<Any>
+    // ── Products ──────────────────────────────────────────────────────────────
+    @GET("api/v1/businesses/{businessId}/products")
+    suspend fun getProductsByBusiness(@Path("businessId") businessId: String): Response<ApiResponse<List<BuyerStoreDto.ProductDto>>>
+
+    @POST("api/v1/businesses/{businessId}/products")
+    suspend fun createProduct(
+        @Path("businessId") businessId: String,
+        @Body body: SellerModels.CreateProductRequest
+    ): Response<ApiResponse<BuyerStoreDto.ProductDto>>
+
+    @PUT("api/v1/products/{id}")
+    suspend fun updateProduct(
+        @Path("id") id: String,
+        @Body body: SellerModels.UpdateProductRequest
+    ): Response<ApiResponse<BuyerStoreDto.ProductDto>>
+
+    @DELETE("api/v1/products/{id}")
+    suspend fun deleteProduct(@Path("id") id: String): Response<Unit>
+
+    // ── Orders ────────────────────────────────────────────────────────────────
+    @POST("api/v1/orders")
+    suspend fun createOrder(@Body body: BuyerStoreDto.CreateOrderRequest): Response<ApiResponse<BuyerStoreDto.OrderDto>>
+
+    @GET("api/v1/orders/my")
+    suspend fun getMyOrders(): Response<ApiResponse<List<BuyerStoreDto.OrderDto>>>
+
+    @GET("api/v1/orders/{id}")
+    suspend fun getOrderById(@Path("id") id: String): Response<ApiResponse<BuyerStoreDto.OrderDto>>
+
+    @POST("api/v1/orders/{id}/cancel")
+    suspend fun cancelOrder(@Path("id") id: String): Response<ApiResponse<BuyerStoreDto.OrderDto>>
+
+    @GET("api/v1/businesses/{businessId}/orders")
+    suspend fun getOrdersByBusiness(@Path("businessId") businessId: String): Response<ApiResponse<List<BuyerStoreDto.OrderDto>>>
+
+    @POST("api/v1/orders/scan")
+    suspend fun scanOrderQr(@Body body: SellerModels.ScanQrRequest): Response<ApiResponse<BuyerStoreDto.OrderDto>>
 }

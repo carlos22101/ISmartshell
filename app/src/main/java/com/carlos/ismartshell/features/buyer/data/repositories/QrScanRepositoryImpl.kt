@@ -2,8 +2,7 @@ package com.carlos.ismartshell.features.buyer.data.repositories
 
 import com.carlos.ismartshell.core.database.dao.QrScanDao
 import com.carlos.ismartshell.core.database.entities.QrScanEntity
-import com.carlos.ismartshell.features.buyer.data.mappers.toDomain
-import com.carlos.ismartshell.features.buyer.data.mappers.toEntity
+import com.carlos.ismartshell.features.buyer.data.mappers.QrScanMapper
 import com.carlos.ismartshell.features.buyer.domain.entities.QrScan
 import com.carlos.ismartshell.features.buyer.domain.repositories.QrScanRepository
 import kotlinx.coroutines.flow.Flow
@@ -14,20 +13,18 @@ class QrScanRepositoryImpl @Inject constructor(
     private val dao: QrScanDao
 ) : QrScanRepository {
 
-    override suspend fun saveQrScan(rawValue: String, storeName: String?, storeId: Int?) {
-        dao.insert(QrScanEntity(rawValue = rawValue, storeName = storeName, storeId = storeId))
+    override fun getHistory(): Flow<List<QrScan>> =
+        dao.getAllScans().map { list -> list.map { QrScanMapper.toDomain(it) } }
+
+    override suspend fun save(code: String, label: String) {
+        dao.insert(QrScanEntity(code = code, label = label))
     }
 
-    override fun getAllScans(): Flow<List<QrScan>> =
-        dao.getAllScans().map { list -> list.map { it.toDomain() } }
+    override suspend fun delete(scan: QrScan) {
+        dao.delete(QrScanMapper.toEntity(scan))
+    }
 
-    override fun getRecentScans(limit: Int): Flow<List<QrScan>> =
-        dao.getRecentScans(limit).map { list -> list.map { it.toDomain() } }
-
-    override fun searchScans(query: String): Flow<List<QrScan>> =
-        dao.searchScans(query).map { list -> list.map { it.toDomain() } }
-
-    override suspend fun deleteQrScan(scan: QrScan) = dao.delete(scan.toEntity())
-
-    override suspend fun clearHistory() = dao.clearAll()
+    override suspend fun clearAll() {
+        dao.deleteAll()
+    }
 }
