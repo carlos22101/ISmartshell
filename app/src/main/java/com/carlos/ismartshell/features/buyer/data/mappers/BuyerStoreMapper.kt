@@ -13,7 +13,8 @@ object BuyerStoreMapper {
         type           = dto.type ?: "",
         latitude       = dto.latitude ?: 0.0,
         longitude      = dto.longitude ?: 0.0,
-        deliveryPoints = dto.deliveryPoints?.map { dpToDomain(it) } ?: emptyList()
+        deliveryPoints = dto.deliveryPoints?.map { dpToDomain(it) } ?: emptyList(),
+        distance       = dto.distance
     )
 
     fun dpToDomain(dto: BuyerStoreDto.DeliveryPointDto) = DeliveryPoint(

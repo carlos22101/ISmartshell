@@ -27,7 +27,8 @@ data class BuyerStore(
     val latitude: Double,
     val longitude: Double,
     val deliveryPoints: List<DeliveryPoint> = emptyList(),
-    val products: List<Product> = emptyList()
+    val products: List<Product> = emptyList(),
+    val distance: Double? = null
 )
 
 data class OrderItem(

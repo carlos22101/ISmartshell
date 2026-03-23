@@ -17,7 +17,7 @@ room                    = "2.6.1"
 hilt                    = "2.53"
 hiltNavigationCompose   = "1.2.0"
 datastore               = "1.1.1"
-mapbox                  = "11.8.0"
+mapbox                  = "10.16.0"
 
 [libraries]
 # Core
@@ -61,8 +61,9 @@ io-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "
 # DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
+# Mapbox v10 Stable
 mapbox-android = { group = "com.mapbox.maps", name = "android", version.ref = "mapbox" }
-mapbox-compose = { group = "com.mapbox.extension", name = "maps-compose", version.ref = "mapbox" }
+mapbox-plugin-annotation = { group = "com.mapbox.maps", name = "plugin-annotation", version.ref = "mapbox" }
 
 [plugins]
 android-application = { id = "com.android.application",        version.ref = "agp" }

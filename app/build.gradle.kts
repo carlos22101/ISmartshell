@@ -105,8 +105,8 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
     // Mapbox
-    implementation(libs.mapbox.android)
-    implementation(libs.mapbox.compose)
+    implementation("com.mapbox.maps:android:10.16.0")
+    implementation("com.mapbox.extension:maps-compose:0.1.0")
 
     // Location (needed for user location regardless of map provider)
     implementation("com.google.android.gms:play-services-location:21.3.0")
