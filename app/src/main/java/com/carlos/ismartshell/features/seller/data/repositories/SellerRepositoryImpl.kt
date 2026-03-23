@@ -24,7 +24,7 @@ class SellerRepositoryImpl @Inject constructor(
         val res = api.getBusinessById(id)
         val body = res.body()?.data ?: error(res.body()?.error ?: "Error")
         
-        // Usamos el mapeador de Seller que ya es robusto con los nombres de campos
+        // Mapeamos el DTO de Business a SellerBusinessDto para usar el mapper de Seller
         val storeBase = SellerMapper.toDomain(
             SellerModels.SellerBusinessDto(
                 id = body.id,
@@ -38,10 +38,12 @@ class SellerRepositoryImpl @Inject constructor(
             )
         )
 
-        val products = api.getProductsByBusiness(id).body()?.data
+        val productsRes = api.getProductsByBusiness(id)
+        val products = productsRes.body()?.data
             ?.map { BuyerStoreMapper.productToDomain(it) } ?: emptyList()
             
-        val orders = api.getOrdersByBusiness(id).body()?.data
+        val ordersRes = api.getOrdersByBusiness(id)
+        val orders = ordersRes.body()?.data
             ?.map { BuyerStoreMapper.orderToDomain(it) } ?: emptyList()
 
         storeBase.copy(products = products, orders = orders)
@@ -64,14 +66,15 @@ class SellerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteStore(id: String): Result<Unit> = runCatching {
-        api.deleteBusiness(id)
+        val res = api.deleteBusiness(id)
+        if (!res.isSuccessful) error("Error al eliminar tienda")
     }
 
     override suspend fun createProduct(
         businessId: String, name: String, description: String, price: Double, stock: Int
     ): Result<Product> = runCatching {
         val res = api.createProduct(businessId, SellerModels.CreateProductRequest(name, description, price, stock))
-        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error")
+        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error al crear producto")
         BuyerStoreMapper.productToDomain(dto)
     }
 
@@ -79,18 +82,19 @@ class SellerRepositoryImpl @Inject constructor(
         productId: String, name: String, description: String, price: Double, stock: Int
     ): Result<Product> = runCatching {
         val res = api.updateProduct(productId, SellerModels.UpdateProductRequest(name, description, price, stock))
-        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error")
+        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error al actualizar producto")
         BuyerStoreMapper.productToDomain(dto)
     }
 
     override suspend fun deleteProduct(productId: String): Result<Unit> = runCatching {
-        api.deleteProduct(productId)
+        val res = api.deleteProduct(productId)
+        if (!res.isSuccessful) error("Error al eliminar producto")
     }
 
     override suspend fun getOrdersByBusiness(businessId: String): Result<List<Order>> = runCatching {
         val res = api.getOrdersByBusiness(businessId)
         res.body()?.data?.map { BuyerStoreMapper.orderToDomain(it) }
-            ?: error(res.body()?.error ?: "Error")
+            ?: error(res.body()?.error ?: "Error al obtener órdenes")
     }
 
     override suspend fun scanOrderQr(qrCode: String): Result<Order> = runCatching {

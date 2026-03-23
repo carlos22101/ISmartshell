@@ -14,6 +14,7 @@ object BuyerStoreMapper {
         latitude       = dto.latitude ?: 0.0,
         longitude      = dto.longitude ?: 0.0,
         deliveryPoints = dto.deliveryPoints?.map { dpToDomain(it) } ?: emptyList(),
+        products       = dto.products?.map { productToDomain(it) } ?: emptyList(),
         distance       = dto.distance
     )
 

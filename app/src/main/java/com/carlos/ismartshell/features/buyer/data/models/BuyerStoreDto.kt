@@ -5,58 +5,59 @@ import com.google.gson.annotations.SerializedName
 object BuyerStoreDto {
 
     data class DeliveryPointDto(
-        @SerializedName("id") val id: String? = null,
-        @SerializedName("business_id") val businessId: String? = null,
-        @SerializedName("name") val name: String? = null,
-        @SerializedName("latitude") val latitude: Double? = null,
-        @SerializedName("longitude") val longitude: Double? = null,
-        @SerializedName("active") val active: Boolean? = null
+        @SerializedName("id", alternate = ["ID"]) val id: String? = null,
+        @SerializedName("business_id", alternate = ["BusinessID"]) val businessId: String? = null,
+        @SerializedName("name", alternate = ["Name"]) val name: String? = null,
+        @SerializedName("latitude", alternate = ["Latitude"]) val latitude: Double? = null,
+        @SerializedName("longitude", alternate = ["Longitude"]) val longitude: Double? = null,
+        @SerializedName("active", alternate = ["Active"]) val active: Boolean? = null
     )
 
     data class BusinessDto(
-        @SerializedName("id") val id: String? = null,
-        @SerializedName("owner_id") val ownerId: String? = null,
-        @SerializedName("name") val name: String? = null,
-        @SerializedName("description") val description: String? = null,
-        @SerializedName("type") val type: String? = null,
-        @SerializedName("latitude") val latitude: Double? = null,
-        @SerializedName("longitude") val longitude: Double? = null,
-        @SerializedName("active") val active: Boolean? = null,
-        @SerializedName("delivery_points") val deliveryPoints: List<DeliveryPointDto>? = null,
-        @SerializedName("distance") val distance: Double? = null
+        @SerializedName("id", alternate = ["ID"]) val id: String? = null,
+        @SerializedName("owner_id", alternate = ["OwnerID"]) val ownerId: String? = null,
+        @SerializedName("name", alternate = ["Name"]) val name: String? = null,
+        @SerializedName("description", alternate = ["Description"]) val description: String? = null,
+        @SerializedName("type", alternate = ["Type"]) val type: String? = null,
+        @SerializedName("latitude", alternate = ["Latitude"]) val latitude: Double? = null,
+        @SerializedName("longitude", alternate = ["Longitude"]) val longitude: Double? = null,
+        @SerializedName("active", alternate = ["Active"]) val active: Boolean? = null,
+        @SerializedName("delivery_points", alternate = ["DeliveryPoints"]) val deliveryPoints: List<DeliveryPointDto>? = null,
+        @SerializedName("products", alternate = ["Products"]) val products: List<ProductDto>? = null,
+        @SerializedName("distance", alternate = ["Distance"]) val distance: Double? = null
     )
 
     data class ProductDto(
-        @SerializedName("id") val id: String? = null,
-        @SerializedName("business_id") val businessId: String? = null,
-        @SerializedName("name") val name: String? = null,
-        @SerializedName("description") val description: String? = null,
-        @SerializedName("price") val price: Double? = null,
-        @SerializedName("stock") val stock: Int? = null,
-        @SerializedName("image_url") val imageUrl: String? = null,
-        @SerializedName("active") val active: Boolean? = null
+        @SerializedName("id", alternate = ["ID"]) val id: String? = null,
+        @SerializedName("business_id", alternate = ["BusinessID"]) val businessId: String? = null,
+        @SerializedName("name", alternate = ["Name"]) val name: String? = null,
+        @SerializedName("description", alternate = ["Description"]) val description: String? = null,
+        @SerializedName("price", alternate = ["Price"]) val price: Double? = null,
+        @SerializedName("stock", alternate = ["Stock"]) val stock: Int? = null,
+        @SerializedName("image_url", alternate = ["ImageURL"]) val imageUrl: String? = null,
+        @SerializedName("active", alternate = ["Active"]) val active: Boolean? = null
     )
 
     data class OrderItemDto(
-        @SerializedName("id") val id: String? = null,
-        @SerializedName("order_id") val orderId: String? = null,
-        @SerializedName("product_id") val productId: String? = null,
-        @SerializedName("quantity") val quantity: Int? = null,
-        @SerializedName("unit_price") val unitPrice: Double? = null
+        @SerializedName("id", alternate = ["ID"]) val id: String? = null,
+        @SerializedName("order_id", alternate = ["OrderID"]) val orderId: String? = null,
+        @SerializedName("product_id", alternate = ["ProductID"]) val productId: String? = null,
+        @SerializedName("quantity", alternate = ["Quantity"]) val quantity: Int? = null,
+        @SerializedName("unit_price", alternate = ["UnitPrice"]) val unitPrice: Double? = null
     )
 
     data class OrderDto(
-        @SerializedName("id") val id: String? = null,
-        @SerializedName("buyer_id") val buyerId: String? = null,
-        @SerializedName("business_id") val businessId: String? = null,
-        @SerializedName("type") val type: String? = null,
-        @SerializedName("status") val status: String? = null,
-        @SerializedName("total") val total: Double? = null,
-        @SerializedName("qr_code") val qrCode: String? = null,
-        @SerializedName("delivery_point_id") val deliveryPointId: String? = null,
-        @SerializedName("pickup_deadline") val pickupDeadline: String? = null,
-        @SerializedName("created_at") val createdAt: String? = null,
-        @SerializedName("items") val items: List<OrderItemDto>? = null
+        @SerializedName("id", alternate = ["ID"]) val id: String? = null,
+        @SerializedName("buyer_id", alternate = ["BuyerID"]) val buyerId: String? = null,
+        @SerializedName("business_id", alternate = ["BusinessID"]) val businessId: String? = null,
+        @SerializedName("type", alternate = ["Type"]) val type: String? = null,
+        @SerializedName("status", alternate = ["Status"]) val status: String? = null,
+        @SerializedName("total", alternate = ["Total"]) val total: Double? = null,
+        @SerializedName("qr_code", alternate = ["QRCode"]) val qrCode: String? = null,
+        @SerializedName("delivery_point_id", alternate = ["DeliveryPointID"]) val deliveryPointId: String? = null,
+        @SerializedName("pickup_deadline", alternate = ["PickupDeadline"]) val pickupDeadline: String? = null,
+        @SerializedName("created_at", alternate = ["CreatedAt"]) val createdAt: String? = null,
+        @SerializedName("items", alternate = ["Items"]) val items: List<OrderItemDto>? = null
     )
 
     data class CreateOrderItemRequest(
