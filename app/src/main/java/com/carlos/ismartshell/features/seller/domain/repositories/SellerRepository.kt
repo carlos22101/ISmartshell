@@ -15,4 +15,5 @@ interface SellerRepository {
     suspend fun deleteProduct(productId: String): Result<Unit>
     suspend fun getOrdersByBusiness(businessId: String): Result<List<Order>>
     suspend fun scanOrderQr(qrCode: String): Result<Order>
+    suspend fun markOrderAsReady(orderId: String): Result<Order>
 }

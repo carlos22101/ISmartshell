@@ -138,12 +138,32 @@ class CreateStoreViewModel @Inject constructor(
             sellerRepo.scanOrderQr(qrCode)
                 .onSuccess  { order ->
                     vibrationManager.vibrateSingle()
-                    _uiState.update { it.copy(scannedOrder = order) }
+                    _uiState.update { state ->
+                        state.copy(
+                            scannedOrder = order,
+                            orders = state.orders.map { if (it.id == order.id) order else it }
+                        )
+                    }
                 }
                 .onFailure { e ->
                     vibrationManager.vibrateError()
                     _uiState.update { it.copy(error = e.message) }
                 }
+        }
+    }
+
+    fun markOrderAsReady(orderId: String) {
+        viewModelScope.launch {
+            sellerRepo.markOrderAsReady(orderId)
+                .onSuccess { updatedOrder ->
+                    _uiState.update { state ->
+                        state.copy(
+                            orders = state.orders.map { if (it.id == orderId) updatedOrder else it },
+                            success = "Orden lista para entrega"
+                        )
+                    }
+                }
+                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
         }
     }
 

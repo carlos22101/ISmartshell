@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -64,11 +65,14 @@ fun CreateStoreScreen(
             store         = state.selectedStore!!,
             products      = state.products,
             orders        = state.orders,
+            scannedOrder  = state.scannedOrder,
             onBack        = { viewModel.clearSelectedStore() },
             onAddProduct  = { showProductDialog = true },
             onDeleteProduct = { viewModel.deleteProduct(it) },
             onScanQr      = { showQrScanner = true },
-            onDeleteStore  = { viewModel.deleteStore(state.selectedStore!!.id) }
+            onDeleteStore  = { viewModel.deleteStore(state.selectedStore!!.id) },
+            onClearScanned = { viewModel.clearScannedOrder() },
+            onMarkAsReady = { viewModel.markOrderAsReady(it) }
         )
     }
 
@@ -173,11 +177,14 @@ private fun SellerStoreDetailScreen(
     store: SellerStore,
     products: List<Product>,
     orders: List<Order>,
+    scannedOrder: Order?,
     onBack: () -> Unit,
     onAddProduct: () -> Unit,
     onDeleteProduct: (String) -> Unit,
     onScanQr: () -> Unit,
-    onDeleteStore: () -> Unit
+    onDeleteStore: () -> Unit,
+    onClearScanned: () -> Unit,
+    onMarkAsReady: (String) -> Unit
 ) {
     var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Productos", "Órdenes")
@@ -207,9 +214,42 @@ private fun SellerStoreDetailScreen(
             }
             when (tabIndex) {
                 0 -> ProductsTab(products, onDeleteProduct)
-                1 -> OrdersTab(orders)
+                1 -> OrdersTab(orders, onMarkAsReady)
             }
         }
+    }
+
+    if (scannedOrder != null) {
+        AlertDialog(
+            onDismissRequest = onClearScanned,
+            title = { Text("Orden Escaneada") },
+            text = {
+                Column {
+                    Text("ID: ${scannedOrder.id.take(8)}", fontWeight = FontWeight.Bold)
+                    Text("Total: $${scannedOrder.total}")
+                    Text("Estado: ${scannedOrder.status.uppercase()}", 
+                        color = when(scannedOrder.status) {
+                            "delivered" -> Color(0xFF4CAF50)
+                            "ready"     -> Color(0xFF2196F3)
+                            else        -> Color(0xFFFF9800)
+                        },
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        when(scannedOrder.status) {
+                            "delivered" -> "Esta orden YA FUE ENTREGADA."
+                            "ready"     -> "Orden LISTA. Se ha marcado como ENTREGADA ahora."
+                            else        -> "ATENCIÓN: La orden aún no está marcada como 'READY'."
+                        },
+                        color = Color.Gray
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onClearScanned) { Text("CERRAR") }
+            }
+        )
     }
 }
 
@@ -237,17 +277,48 @@ private fun ProductsTab(products: List<Product>, onDelete: (String) -> Unit) {
 }
 
 @Composable
-private fun OrdersTab(orders: List<Order>) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(orders, key = { it.id }) { order ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Orden ${order.id.take(8)}", fontWeight = FontWeight.Bold)
-                    Text("Estado: ${order.status}")
+private fun OrdersTab(orders: List<Order>, onMarkAsReady: (String) -> Unit) {
+    if (orders.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No hay órdenes registradas", color = MaterialTheme.colorScheme.outline)
+        }
+    } else {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(orders, key = { it.id }) { order ->
+                Card(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Orden ${order.id.take(8)}", fontWeight = FontWeight.Bold)
+                            Text(
+                                order.status.uppercase(),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = when(order.status) {
+                                    "delivered" -> Color(0xFF4CAF50)
+                                    "ready"     -> Color(0xFF2196F3)
+                                    else        -> Color(0xFFFF9800)
+                                }
+                            )
+                            Text("Total: $${order.total}", style = MaterialTheme.typography.bodySmall)
+                        }
+                        
+                        if (order.status == "paid" || order.status == "reserved") {
+                            Button(
+                                onClick = { onMarkAsReady(order.id) },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text("MARCAR LISTO", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                 }
             }
         }

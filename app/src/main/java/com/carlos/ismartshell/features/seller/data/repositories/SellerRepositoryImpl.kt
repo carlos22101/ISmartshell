@@ -24,7 +24,6 @@ class SellerRepositoryImpl @Inject constructor(
         val res = api.getBusinessById(id)
         val body = res.body()?.data ?: error(res.body()?.error ?: "Error")
         
-        // Mapeamos el DTO de Business a SellerBusinessDto para usar el mapper de Seller
         val storeBase = SellerMapper.toDomain(
             SellerModels.SellerBusinessDto(
                 id = body.id,
@@ -99,7 +98,13 @@ class SellerRepositoryImpl @Inject constructor(
 
     override suspend fun scanOrderQr(qrCode: String): Result<Order> = runCatching {
         val res = api.scanOrderQr(SellerModels.ScanQrRequest(qrCode))
-        val dto = res.body()?.data ?: error(res.body()?.error ?: "QR inválido")
+        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error al escanear: " + (res.body()?.error ?: "Código inválido o estado incorrecto"))
+        BuyerStoreMapper.orderToDomain(dto)
+    }
+
+    override suspend fun markOrderAsReady(orderId: String): Result<Order> = runCatching {
+        val res = api.markOrderAsReady(orderId)
+        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error al marcar como listo")
         BuyerStoreMapper.orderToDomain(dto)
     }
 }

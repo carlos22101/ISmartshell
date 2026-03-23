@@ -90,4 +90,7 @@ interface ApiService {
 
     @POST("api/v1/orders/scan")
     suspend fun scanOrderQr(@Body body: SellerModels.ScanQrRequest): Response<ApiResponse<BuyerStoreDto.OrderDto>>
+
+    @POST("api/v1/orders/{id}/ready")
+    suspend fun markOrderAsReady(@Path("id") id: String): Response<ApiResponse<BuyerStoreDto.OrderDto>>
 }

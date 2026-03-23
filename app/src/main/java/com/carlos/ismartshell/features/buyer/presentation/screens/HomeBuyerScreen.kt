@@ -1,5 +1,6 @@
 package com.carlos.ismartshell.features.buyer.presentation.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,10 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carlos.ismartshell.core.util.QrCodeGenerator
 import com.carlos.ismartshell.features.buyer.domain.entities.BuyerStore
 import com.carlos.ismartshell.features.buyer.domain.entities.Product
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
@@ -84,15 +88,49 @@ fun HomeBuyerScreen(
     state.orderSuccess?.let { order ->
         AlertDialog(
             onDismissRequest = { viewModel.clearOrderSuccess() },
-            title = { Text("¡Pedido creado!") },
+            title = { Text("¡Pedido creado!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
             text  = {
-                Column {
-                    Text("Total: $${order.total}")
-                    order.qrCode?.let { Text("Código QR: $it") }
-                    if (order.type == "reserved") Text("Recoge antes de: ${order.pickupDeadline}")
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Total: $${order.total}", fontWeight = FontWeight.Bold)
+                    
+                    val qrBitmap = remember(order.qrCode) {
+                        order.qrCode?.let { QrCodeGenerator.generateQrCode(it, 400) }
+                    }
+
+                    if (qrBitmap != null) {
+                        Spacer(Modifier.height(16.dp))
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "Código QR del pedido",
+                            modifier = Modifier.size(200.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Muestra este QR al vendedor",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Generando código QR...", color = MaterialTheme.colorScheme.outline)
+                    }
+
+                    if (order.type == "reserved") {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Recoge antes de:", style = MaterialTheme.typography.labelMedium)
+                        Text(order.pickupDeadline ?: "N/A", color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             },
-            confirmButton = { TextButton(onClick = { viewModel.clearOrderSuccess() }) { Text("OK") } }
+            confirmButton = { 
+                Button(
+                    onClick = { viewModel.clearOrderSuccess() },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Entendido") }
+            }
         )
     }
 

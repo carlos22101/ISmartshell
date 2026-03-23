@@ -112,6 +112,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
+    // QR Generation
+    implementation("com.google.zxing:core:3.5.3")
+
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
 }
