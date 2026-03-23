@@ -1,3 +1,13 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.projectDir.resolve("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(FileInputStream(localPropertiesFile))
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -17,6 +27,11 @@ android {
         versionCode   = 1
         versionName   = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Inyectar el token público como un campo de BuildConfig o recurso
+        val mapboxPublicToken = localProperties.getProperty("MAPBOX_PUBLIC_TOKEN") ?: ""
+        resValue("string", "mapbox_access_token", mapboxPublicToken)
+        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxPublicToken\"")
     }
 
     buildTypes {
@@ -33,7 +48,10 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    buildFeatures { 
+        compose = true 
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -86,10 +104,12 @@ dependencies {
     // Permisos
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
-    // Maps & Location
-    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    // Mapbox
+    implementation(libs.mapbox.android)
+    implementation(libs.mapbox.compose)
+
+    // Location (needed for user location regardless of map provider)
     implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("com.google.maps.android:maps-compose:6.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
     // Debug

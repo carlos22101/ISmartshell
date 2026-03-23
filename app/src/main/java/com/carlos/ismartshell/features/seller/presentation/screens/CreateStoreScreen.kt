@@ -28,6 +28,7 @@ import com.carlos.ismartshell.features.seller.presentation.viewmodels.CreateStor
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.carlos.ismartshell.core.util.LatLng
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,23 +40,26 @@ fun CreateStoreScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var showProductDialog by remember { mutableStateOf(false) }
     var showQrScanner by remember { mutableStateOf(false) }
+    
+    var showLocationPicker by remember { mutableStateOf(false) }
+    var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
 
-    // Mensajes
     state.success?.let { msg ->
         LaunchedEffect(msg) { viewModel.clearMessages() }
         Snackbar(modifier = Modifier.padding(16.dp)) { Text(msg) }
     }
 
     if (state.selectedStore == null) {
-        // Lista de tiendas del vendedor
         SellerStoreListScreen(
             stores    = state.stores,
             isLoading = state.isLoading,
-            onCreateClick = { showCreateDialog = true },
+            onCreateClick = { 
+                selectedLocation = null
+                showCreateDialog = true 
+            },
             onSelectStore = { viewModel.loadStoreDetail(it.id) }
         )
     } else {
-        // Detalle de tienda
         SellerStoreDetailScreen(
             store         = state.selectedStore!!,
             products      = state.products,
@@ -76,28 +80,26 @@ fun CreateStoreScreen(
         )
     }
 
-    state.scannedOrder?.let { order ->
-        AlertDialog(
-            onDismissRequest = { viewModel.clearScannedOrder() },
-            title = { Text("✅ Entrega confirmada") },
-            text  = {
-                Column {
-                    Text("Orden: ${order.id.take(8)}...")
-                    Text("Total: $${order.total}")
-                    Text("Estado: ${order.status}")
-                }
-            },
-            confirmButton = { Button(onClick = { viewModel.clearScannedOrder() }) { Text("OK") } }
+    if (showCreateDialog) {
+        CreateStoreDialog(
+            selectedLocation = selectedLocation,
+            onPickLocation = { showLocationPicker = true },
+            onDismiss = { showCreateDialog = false },
+            onCreate  = { name, desc, type, loc ->
+                viewModel.createStore(name, desc, type, loc.latitude, loc.longitude)
+                showCreateDialog = false
+            }
         )
     }
 
-    if (showCreateDialog) {
-        CreateStoreDialog(
-            onDismiss = { showCreateDialog = false },
-            onCreate  = { name, desc, type ->
-                viewModel.createStore(name, desc, type)
-                showCreateDialog = false
-            }
+    if (showLocationPicker) {
+        LocationPickerScreen(
+            initialLocation = selectedLocation,
+            onLocationSelected = {
+                selectedLocation = it
+                showLocationPicker = false
+            },
+            onDismiss = { showLocationPicker = false }
         )
     }
 
@@ -143,14 +145,6 @@ private fun SellerStoreListScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (stores.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Store, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Aún no tienes tiendas", color = MaterialTheme.colorScheme.outline)
-                }
-            }
         } else {
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
@@ -165,7 +159,6 @@ private fun SellerStoreListScreen(
                         Column(Modifier.padding(16.dp)) {
                             Text(store.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text(store.type, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                            if (store.description.isNotBlank()) Text(store.description)
                         }
                     }
                 }
@@ -196,13 +189,13 @@ private fun SellerStoreDetailScreen(
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Volver") } },
                 actions = {
                     IconButton(onClick = onScanQr) { Icon(Icons.Default.QrCodeScanner, "Escanear QR") }
-                    IconButton(onClick = onDeleteStore) { Icon(Icons.Default.Delete, "Eliminar tienda", tint = MaterialTheme.colorScheme.error) }
+                    IconButton(onClick = onDeleteStore) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
                 }
             )
         },
         floatingActionButton = {
             if (tabIndex == 0) {
-                FloatingActionButton(onClick = onAddProduct) { Icon(Icons.Default.Add, "Agregar producto") }
+                FloatingActionButton(onClick = onAddProduct) { Icon(Icons.Default.Add, "Producto") }
             }
         }
     ) { padding ->
@@ -228,14 +221,14 @@ private fun ProductsTab(products: List<Product>, onDelete: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(products, key = { it.id }) { product ->
-            Card(Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(1.dp)) {
+            Card(Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(product.name, fontWeight = FontWeight.Bold)
-                        Text("$${product.price} · Stock: ${product.stock}", style = MaterialTheme.typography.bodySmall)
+                        Text("$${product.price}")
                     }
                     IconButton(onClick = { onDelete(product.id) }) {
-                        Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -251,14 +244,10 @@ private fun OrdersTab(orders: List<Order>) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(orders, key = { it.id }) { order ->
-            Card(Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(1.dp)) {
+            Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Orden ${order.id.take(8)}...", fontWeight = FontWeight.Bold)
-                        AssistChip(onClick = {}, label = { Text(order.status) })
-                    }
-                    Text("Total: $${order.total}")
-                    Text("Tipo: ${order.type}", style = MaterialTheme.typography.bodySmall)
+                    Text("Orden ${order.id.take(8)}", fontWeight = FontWeight.Bold)
+                    Text("Estado: ${order.status}")
                 }
             }
         }
@@ -267,8 +256,10 @@ private fun OrdersTab(orders: List<Order>) {
 
 @Composable
 private fun CreateStoreDialog(
+    selectedLocation: LatLng?,
+    onPickLocation: () -> Unit,
     onDismiss: () -> Unit,
-    onCreate: (String, String, String) -> Unit
+    onCreate: (String, String, String, LatLng) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -279,15 +270,22 @@ private fun CreateStoreDialog(
         title = { Text("Nueva tienda") },
         text  = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = type, onValueChange = { type = it }, label = { Text("Tipo (ej. abarrotes)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") })
+                OutlinedTextField(value = type, onValueChange = { type = it }, label = { Text("Tipo") })
+                
+                Button(onClick = onPickLocation, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.LocationOn, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (selectedLocation != null) "Ubicación lista" else "Marcar en mapa")
+                }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                onCreate(name, description, type)
-            }) { Text("Crear") }
+            Button(
+                enabled = name.isNotBlank() && selectedLocation != null,
+                onClick = { onCreate(name, description, type, selectedLocation!!) }
+            ) { Text("Crear") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
@@ -308,12 +306,9 @@ private fun CreateProductDialog(
         title = { Text("Nuevo producto") },
         text  = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Precio") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
-                    OutlinedTextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                }
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") })
+                OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Precio") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                OutlinedTextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             }
         },
         confirmButton = {
@@ -334,43 +329,25 @@ private fun QrScannerOverlay(
 ) {
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
     val lifecycleOwner = LocalLifecycleOwner.current
-    var paused by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        if (!cameraPermission.status.isGranted) cameraPermission.launchPermissionRequest()
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Escanear QR de orden") },
+        title = { Text("Escanear QR") },
         text  = {
-            Box(Modifier.fillMaxWidth().height(280.dp)) {
+            Box(Modifier.fillMaxWidth().height(250.dp)) {
                 if (cameraPermission.status.isGranted) {
                     AndroidView(
                         factory = { ctx ->
                             PreviewView(ctx).also { pv ->
-                                qrScannerManager.startScanning(
-                                    lifecycleOwner = lifecycleOwner,
-                                    previewView    = pv,
-                                    onQrDetected   = { code ->
-                                        if (!paused) {
-                                            paused = true
-                                            onQrDetected(code)
-                                        }
-                                    }
-                                )
+                                qrScannerManager.startScanning(lifecycleOwner, pv, onQrDetected)
                             }
                         },
                         modifier = Modifier.fillMaxSize()
                     )
-                } else {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Se necesita permiso de cámara")
-                    }
                 }
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } }
     )
 }

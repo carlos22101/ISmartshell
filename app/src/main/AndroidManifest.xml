@@ -17,11 +17,6 @@
         android:theme="@style/Theme.Ismartshell"
         android:usesCleartextTraffic="true">
 
-        <!-- Reemplaza YOUR_MAPS_API_KEY con tu clave de Google Maps -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_MAPS_API_KEY" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"

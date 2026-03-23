@@ -56,17 +56,12 @@ class CreateStoreViewModel @Inject constructor(
         }
     }
 
-    fun createStore(name: String, description: String, type: String) {
+    fun createStore(name: String, description: String, type: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             
-            // Obtenemos la ubicación actual automáticamente
-            val location = try { locationManager.getLastLocation() } catch (e: Exception) { null }
-            val lat = location?.latitude ?: 0.0
-            val lng = location?.longitude ?: 0.0
-            
             if (lat == 0.0 && lng == 0.0) {
-                _uiState.update { it.copy(error = "No se pudo obtener tu ubicación. Activa el GPS.", isLoading = false) }
+                _uiState.update { it.copy(error = "Ubicación inválida.", isLoading = false) }
                 return@launch
             }
 
@@ -74,7 +69,7 @@ class CreateStoreViewModel @Inject constructor(
                 .onSuccess { store ->
                     _uiState.update { it.copy(
                         stores    = it.stores + store,
-                        success   = "Tienda \"${store.name}\" creada en tu ubicación actual",
+                        success   = "Tienda \"${store.name}\" creada correctamente",
                         isLoading = false
                     )}
                 }
@@ -151,6 +146,8 @@ class CreateStoreViewModel @Inject constructor(
                 }
         }
     }
+
+    suspend fun getCurrentLocation() = try { locationManager.getLastLocation() } catch(e: Exception) { null }
 
     fun clearScannedOrder() { _uiState.update { it.copy(scannedOrder = null) } }
     fun clearSelectedStore() { _uiState.update { it.copy(selectedStore = null, products = emptyList(), orders = emptyList()) } }

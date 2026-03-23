@@ -28,20 +28,36 @@ fun HomeBuyerScreen(
     var showOrderDialog by remember { mutableStateOf(false) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var orderType by remember { mutableStateOf("online") }
+    
+    // Estado para alternar entre lista y mapa general
+    var isMapViewActive by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.orderSuccess) {
         if (state.orderSuccess != null) showOrderDialog = false
     }
 
     if (state.selectedStore == null) {
-        // Lista de tiendas
-        StoreListScreen(
-            stores    = state.stores,
-            isLoading = state.isLoading,
-            onRefresh  = { viewModel.loadStores() },
-            onSelectStore = { viewModel.selectStore(it.id) },
-            onMapClick = onNavigateToMap
-        )
+        if (isMapViewActive) {
+            // Nueva pantalla de mapa general
+            NearbyStoresMapScreen(
+                stores = state.stores,
+                onBack = { isMapViewActive = false },
+                onSelectStore = { storeId ->
+                    viewModel.selectStore(storeId)
+                    isMapViewActive = false
+                }
+            )
+        } else {
+            // Lista de tiendas
+            StoreListScreen(
+                stores = state.stores,
+                isLoading = state.isLoading,
+                onRefresh = { viewModel.loadStores() },
+                onSelectStore = { viewModel.selectStore(it.id) },
+                onMapClick = onNavigateToMap,
+                onOpenMapMode = { isMapViewActive = true }
+            )
+        }
     } else {
         // Detalle de tienda
         StoreDetailScreen(
@@ -113,13 +129,17 @@ private fun StoreListScreen(
     isLoading: Boolean,
     onRefresh: () -> Unit,
     onSelectStore: (BuyerStore) -> Unit,
-    onMapClick: (String) -> Unit
+    onMapClick: (String) -> Unit,
+    onOpenMapMode: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Tiendas cercanas") },
-                actions = { IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, "Actualizar") } }
+                actions = {
+                    IconButton(onClick = onOpenMapMode) { Icon(Icons.Default.Map, "Ver Mapa") }
+                    IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, "Actualizar") }
+                }
             )
         }
     ) { padding ->

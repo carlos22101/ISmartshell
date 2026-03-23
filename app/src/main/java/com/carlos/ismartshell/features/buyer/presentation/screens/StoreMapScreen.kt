@@ -8,16 +8,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.StoreMapViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
+import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -52,30 +52,27 @@ fun StoreMapScreen(
         }
 
         state.store?.let { store ->
-            val storeLatLng = LatLng(store.latitude, store.longitude)
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(storeLatLng, 15f)
+            val storePoint = Point.fromLngLat(store.longitude, store.latitude)
+            val mapViewportState = rememberMapViewportState {
+                setCameraOptions {
+                    center(storePoint)
+                    zoom(15.0)
+                }
             }
 
-            GoogleMap(
+            MapboxMap(
                 modifier = Modifier.fillMaxSize().padding(padding),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(isMyLocationEnabled = locationPermission.status.isGranted),
-                uiSettings = MapUiSettings(myLocationButtonEnabled = true)
+                mapViewportState = mapViewportState
             ) {
                 // Marcador principal del negocio
-                Marker(
-                    state = MarkerState(position = storeLatLng),
-                    title = store.name,
-                    snippet = store.type
+                PointAnnotation(
+                    point = storePoint
                 )
 
                 // Puntos de entrega alternativos
                 store.deliveryPoints.forEach { dp ->
-                    Marker(
-                        state = MarkerState(position = LatLng(dp.latitude, dp.longitude)),
-                        title = dp.name,
-                        snippet = "Punto de entrega"
+                    PointAnnotation(
+                        point = Point.fromLngLat(dp.longitude, dp.latitude)
                     )
                 }
             }
