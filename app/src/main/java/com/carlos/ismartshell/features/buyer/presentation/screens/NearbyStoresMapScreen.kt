@@ -2,6 +2,7 @@ package com.carlos.ismartshell.features.buyer.presentation.screens
 
 import android.Manifest
 import android.graphics.Color
+import android.location.Location
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,7 @@ import com.mapbox.maps.plugin.annotation.generated.createCircleAnnotationManager
 @Composable
 fun NearbyStoresMapScreen(
     stores: List<BuyerStore>,
+    userLocation: Location?,
     onBack: () -> Unit,
     onSelectStore: (String) -> Unit
 ) {
@@ -61,7 +63,9 @@ fun NearbyStoresMapScreen(
                     )
                     
                     getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) { style ->
-                        val initialPoint = if (stores.isNotEmpty()) {
+                        val initialPoint = userLocation?.let { 
+                            Point.fromLngLat(it.longitude, it.latitude) 
+                        } ?: if (stores.isNotEmpty()) {
                             Point.fromLngLat(stores.first().longitude, stores.first().latitude)
                         } else {
                             Point.fromLngLat(-93.1148, 16.7516)
@@ -70,26 +74,38 @@ fun NearbyStoresMapScreen(
                         getMapboxMap().setCamera(
                             CameraOptions.Builder()
                                 .center(initialPoint)
-                                .zoom(12.0)
+                                .zoom(13.0)
                                 .build()
                         )
 
-                        // Gestor de anotaciones de círculo (muy estables y visibles)
-                        val circleAnnotationManager = annotations.createCircleAnnotationManager()
+                        val annotationManager = annotations.createCircleAnnotationManager()
                         
+                        // Marcador de USUARIO (Azul)
+                        userLocation?.let { loc ->
+                            annotationManager.create(
+                                CircleAnnotationOptions()
+                                    .withPoint(Point.fromLngLat(loc.longitude, loc.latitude))
+                                    .withCircleRadius(10.0)
+                                    .withCircleColor(Color.parseColor("#2196F3"))
+                                    .withCircleStrokeWidth(2.0)
+                                    .withCircleStrokeColor("#FFFFFF")
+                            )
+                        }
+
+                        // Marcadores de TIENDAS (Rosa)
                         stores.forEach { store ->
                             val point = Point.fromLngLat(store.longitude, store.latitude)
                             
                             val circleOptions = CircleAnnotationOptions()
                                 .withPoint(point)
                                 .withCircleRadius(12.0)
-                                .withCircleColor(Color.parseColor("#E91E63")) // Rosa
+                                .withCircleColor(Color.parseColor("#E91E63"))
                                 .withCircleStrokeWidth(2.0)
                                 .withCircleStrokeColor("#FFFFFF")
 
-                            val annotation = circleAnnotationManager.create(circleOptions)
+                            val annotation = annotationManager.create(circleOptions)
                             
-                            circleAnnotationManager.addClickListener { clicked ->
+                            annotationManager.addClickListener { clicked ->
                                 if (clicked.id == annotation.id) {
                                     onSelectStore(store.id)
                                     true

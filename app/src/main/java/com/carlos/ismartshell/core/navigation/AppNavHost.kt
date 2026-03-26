@@ -30,7 +30,6 @@ sealed class Screen(val route: String) {
     object Login      : Screen("login")
     object Register   : Screen("register")
     object HomeBuyer  : Screen("home_buyer")
-    object QrScanner  : Screen("qr_scanner")
     object QrHistory  : Screen("qr_history")
     object StoreMap   : Screen("store_map/{businessId}") {
         fun createRoute(businessId: String) = "store_map/$businessId"
@@ -42,8 +41,7 @@ data class BottomNavItem(val route: String, val label: String, val icon: ImageVe
 
 val buyerNavItems = listOf(
     BottomNavItem(Screen.HomeBuyer.route, "Tiendas",   Icons.Default.Store),
-    BottomNavItem(Screen.QrScanner.route, "Escanear",  Icons.Default.QrCodeScanner),
-    BottomNavItem(Screen.QrHistory.route, "Historial", Icons.Default.History)
+    BottomNavItem(Screen.QrHistory.route, "Pedidos", Icons.Default.History)
 )
 
 val sellerNavItems = listOf(
@@ -123,13 +121,6 @@ fun AppNavHost(
                 HomeBuyerScreen(
                     onNavigateToMap = { id -> navController.navigate(Screen.StoreMap.createRoute(id)) }
                 )
-            }
-        }
-
-        composable(Screen.QrScanner.route) {
-            val qrScannerManager: QrScannerManager = hiltViewModel<QrNavViewModel>().qrScannerManager
-            BuyerScaffold(navController, onLogout) {
-                QrScannerScreen(qrScannerManager = qrScannerManager)
             }
         }
 

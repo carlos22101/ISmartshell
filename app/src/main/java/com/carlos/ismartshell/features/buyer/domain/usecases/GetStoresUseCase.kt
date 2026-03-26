@@ -26,3 +26,7 @@ class DeleteQrScanUseCase @Inject constructor(private val repo: QrScanRepository
 class ClearQrHistoryUseCase @Inject constructor(private val repo: QrScanRepository) {
     suspend operator fun invoke() = repo.clearAll()
 }
+
+class GetMyOrdersUseCase @Inject constructor(private val repo: StoreRepository) {
+    suspend operator fun invoke(): Result<List<Order>> = repo.getMyOrders()
+}

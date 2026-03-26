@@ -8,6 +8,8 @@ import com.carlos.ismartshell.features.seller.data.mappers.SellerMapper
 import com.carlos.ismartshell.features.seller.data.models.SellerModels
 import com.carlos.ismartshell.features.seller.domain.entities.SellerStore
 import com.carlos.ismartshell.features.seller.domain.repositories.SellerRepository
+import com.google.gson.Gson
+import com.carlos.ismartshell.core.network.ApiResponse
 import javax.inject.Inject
 
 class SellerRepositoryImpl @Inject constructor(
@@ -17,12 +19,12 @@ class SellerRepositoryImpl @Inject constructor(
     override suspend fun getMyStores(): Result<List<SellerStore>> = runCatching {
         val res = api.getMyBusinesses()
         res.body()?.data?.map { SellerMapper.toDomain(it) }
-            ?: error(res.body()?.error ?: "Error")
+            ?: error(res.body()?.error ?: "Error al obtener tus tiendas")
     }
 
     override suspend fun getStoreDetail(id: String): Result<SellerStore> = runCatching {
         val res = api.getBusinessById(id)
-        val body = res.body()?.data ?: error(res.body()?.error ?: "Error")
+        val body = res.body()?.data ?: error(res.body()?.error ?: "Error al obtener el detalle")
         
         val storeBase = SellerMapper.toDomain(
             SellerModels.SellerBusinessDto(
@@ -66,7 +68,14 @@ class SellerRepositoryImpl @Inject constructor(
 
     override suspend fun deleteStore(id: String): Result<Unit> = runCatching {
         val res = api.deleteBusiness(id)
-        if (!res.isSuccessful) error("Error al eliminar tienda")
+        if (!res.isSuccessful) {
+            if (res.code() == 405) error("Error 405: DELETE no permitido en el servidor.")
+            val errorBody = res.errorBody()?.string()
+            val errorMsg = if (!errorBody.isNullOrBlank()) {
+                try { Gson().fromJson(errorBody, ApiResponse::class.java).error } catch(e: Exception) { null }
+            } else null
+            error(errorMsg ?: "Error al eliminar tienda (${res.code()})")
+        }
     }
 
     override suspend fun createProduct(
@@ -85,9 +94,29 @@ class SellerRepositoryImpl @Inject constructor(
         BuyerStoreMapper.productToDomain(dto)
     }
 
+    override suspend fun updateProductStock(productId: String, newStock: Int): Result<Product> = runCatching {
+        val res = api.updateProductStock(productId, SellerModels.UpdateStockRequest(newStock))
+        if (!res.isSuccessful) {
+            if (res.code() == 404) error("Error 404: La ruta de stock no existe en el servidor. Verifica el router de Go.")
+            val errorBody = res.errorBody()?.string()
+            val errorMsg = if (!errorBody.isNullOrBlank()) {
+                try { Gson().fromJson(errorBody, ApiResponse::class.java).error } catch(e: Exception) { null }
+            } else null
+            error(errorMsg ?: "Error al actualizar stock (${res.code()})")
+        }
+        val dto = res.body()?.data ?: error("Error al procesar respuesta de stock")
+        BuyerStoreMapper.productToDomain(dto)
+    }
+
     override suspend fun deleteProduct(productId: String): Result<Unit> = runCatching {
         val res = api.deleteProduct(productId)
-        if (!res.isSuccessful) error("Error al eliminar producto")
+        if (!res.isSuccessful) {
+            val errorBody = res.errorBody()?.string()
+            val errorMsg = if (!errorBody.isNullOrBlank()) {
+                try { Gson().fromJson(errorBody, ApiResponse::class.java).error } catch(e: Exception) { null }
+            } else null
+            error(errorMsg ?: "Error al eliminar producto (${res.code()})")
+        }
     }
 
     override suspend fun getOrdersByBusiness(businessId: String): Result<List<Order>> = runCatching {
@@ -98,13 +127,30 @@ class SellerRepositoryImpl @Inject constructor(
 
     override suspend fun scanOrderQr(qrCode: String): Result<Order> = runCatching {
         val res = api.scanOrderQr(SellerModels.ScanQrRequest(qrCode))
-        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error al escanear: " + (res.body()?.error ?: "Código inválido o estado incorrecto"))
+        if (!res.isSuccessful) {
+            val errorBody = res.errorBody()?.string()
+            var errorMsg = try { Gson().fromJson(errorBody, ApiResponse::class.java).error } catch(e: Exception) { null }
+            
+            if (errorMsg == "invalid status transition") {
+                errorMsg = "La orden aún no está marcada como 'LISTA'."
+            } else if (res.code() == 410 || errorMsg?.contains("expired") == true) {
+                errorMsg = "La orden ha expirado."
+            }
+
+            error(errorMsg ?: "Error al escanear QR (${res.code()})")
+        }
+        val dto = res.body()?.data ?: error("Código inválido")
         BuyerStoreMapper.orderToDomain(dto)
     }
 
     override suspend fun markOrderAsReady(orderId: String): Result<Order> = runCatching {
         val res = api.markOrderAsReady(orderId)
-        val dto = res.body()?.data ?: error(res.body()?.error ?: "Error al marcar como listo")
+        if (!res.isSuccessful) {
+            val errorBody = res.errorBody()?.string()
+            val errorMsg = try { Gson().fromJson(errorBody, ApiResponse::class.java).error } catch(e: Exception) { null }
+            error(errorMsg ?: "Error al marcar como listo (${res.code()})")
+        }
+        val dto = res.body()?.data ?: error("Error al procesar respuesta")
         BuyerStoreMapper.orderToDomain(dto)
     }
 }

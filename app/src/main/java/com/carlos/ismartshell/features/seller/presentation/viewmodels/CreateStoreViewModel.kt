@@ -29,7 +29,17 @@ class CreateStoreViewModel @Inject constructor(
 
     @Inject lateinit var sellerRepo: com.carlos.ismartshell.features.seller.domain.repositories.SellerRepository
 
-    init { loadStores() }
+    init { 
+        loadStores()
+        fetchUserLocation()
+    }
+
+    private fun fetchUserLocation() {
+        viewModelScope.launch {
+            val location = try { locationManager.getLastLocation() } catch (e: Exception) { null }
+            _uiState.update { it.copy(userLocation = location) }
+        }
+    }
 
     fun loadStores() {
         viewModelScope.launch {
@@ -115,6 +125,21 @@ class CreateStoreViewModel @Inject constructor(
             sellerRepo.createProduct(businessId, name, description, price, stock)
                 .onSuccess { product ->
                     _uiState.update { it.copy(products = it.products + product, success = "Producto creado") }
+                }
+                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun updateProductStock(productId: String, newStock: Int) {
+        viewModelScope.launch {
+            sellerRepo.updateProductStock(productId, newStock)
+                .onSuccess { updatedProduct ->
+                    _uiState.update { state ->
+                        state.copy(
+                            products = state.products.map { if (it.id == productId) updatedProduct else it },
+                            success = "Stock actualizado correctamente"
+                        )
+                    }
                 }
                 .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
         }

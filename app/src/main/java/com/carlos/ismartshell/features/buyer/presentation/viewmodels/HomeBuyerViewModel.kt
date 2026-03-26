@@ -29,12 +29,14 @@ class HomeBuyerViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val location = try { locationManager.getLastLocation() } catch(e: Exception) { null }
+            
+            _uiState.update { it.copy(userLocation = location) }
 
             val lat = location?.latitude  ?: 16.7516
             val lng = location?.longitude ?: -93.1148
 
-            // El radio es en KM como especifica tu API de Go
-            getStoresUseCase(lat, lng, 10.0) // Buscamos en un radio de 10km
+            // El radio se reduce a 2.0 KM como solicitado
+            getStoresUseCase(lat, lng, 2.0)
                 .onSuccess { stores ->
                     _uiState.update { it.copy(stores = stores, isLoading = false) }
                 }
@@ -71,7 +73,7 @@ class HomeBuyerViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            storeRepository.createOrder(businessId, type, items, deliveryPointId, 24)
+            storeRepository.createOrder(businessId, type, items, deliveryPointId, 1)
                 .onSuccess { order ->
                     _uiState.update { it.copy(orderSuccess = order, isLoading = false) }
                 }

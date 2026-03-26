@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,6 +22,7 @@ import com.carlos.ismartshell.core.util.QrCodeGenerator
 import com.carlos.ismartshell.features.buyer.domain.entities.BuyerStore
 import com.carlos.ismartshell.features.buyer.domain.entities.Product
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
+import com.carlos.ismartshell.features.seller.presentation.screens.STORE_CATEGORIES
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +34,15 @@ fun HomeBuyerScreen(
     var showOrderDialog by remember { mutableStateOf(false) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var orderType by remember { mutableStateOf("online") }
+    var quantity by remember { mutableIntStateOf(1) }
     
+    // Estado de filtro
+    var selectedCategory by remember { mutableStateOf("Todas") }
+    val filteredStores = remember(state.stores, selectedCategory) {
+        if (selectedCategory == "Todas") state.stores
+        else state.stores.filter { it.type == selectedCategory }
+    }
+
     // Estado para alternar entre lista y mapa general
     var isMapViewActive by remember { mutableStateOf(false) }
 
@@ -42,9 +52,9 @@ fun HomeBuyerScreen(
 
     if (state.selectedStore == null) {
         if (isMapViewActive) {
-            // Nueva pantalla de mapa general
             NearbyStoresMapScreen(
-                stores = state.stores,
+                stores = filteredStores,
+                userLocation = state.userLocation,
                 onBack = { isMapViewActive = false },
                 onSelectStore = { storeId ->
                     viewModel.selectStore(storeId)
@@ -52,9 +62,10 @@ fun HomeBuyerScreen(
                 }
             )
         } else {
-            // Lista de tiendas
             StoreListScreen(
-                stores = state.stores,
+                stores = filteredStores,
+                selectedCategory = selectedCategory,
+                onCategorySelect = { selectedCategory = it },
                 isLoading = state.isLoading,
                 onRefresh = { viewModel.loadStores() },
                 onSelectStore = { viewModel.selectStore(it.id) },
@@ -63,7 +74,6 @@ fun HomeBuyerScreen(
             )
         }
     } else {
-        // Detalle de tienda
         StoreDetailScreen(
             store    = state.selectedStore!!,
             products = state.products,
@@ -71,6 +81,7 @@ fun HomeBuyerScreen(
             onMapClick = { onNavigateToMap(state.selectedStore!!.id) },
             onOrderProduct = { product ->
                 selectedProduct = product
+                quantity = 1
                 showOrderDialog = true
             }
         )
@@ -113,9 +124,6 @@ fun HomeBuyerScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline
                         )
-                    } else {
-                        Spacer(Modifier.height(8.dp))
-                        Text("Generando código QR...", color = MaterialTheme.colorScheme.outline)
                     }
 
                     if (order.type == "reserved") {
@@ -139,9 +147,53 @@ fun HomeBuyerScreen(
             onDismissRequest = { showOrderDialog = false },
             title = { Text("Ordenar: ${selectedProduct!!.name}") },
             text  = {
-                Column {
-                    Text("Precio: $${selectedProduct!!.price}")
-                    Spacer(Modifier.height(8.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Precio unitario: $${selectedProduct!!.price}")
+                    
+                    // Selector de cantidad
+                    Column {
+                        Text("Cantidad:", style = MaterialTheme.typography.labelMedium)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            IconButton(
+                                onClick = { if (quantity > 1) quantity-- },
+                                enabled = quantity > 1
+                            ) {
+                                Icon(Icons.Default.Remove, "Menos")
+                            }
+                            
+                            Text(
+                                text = quantity.toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            IconButton(
+                                onClick = { if (quantity < (selectedProduct!!.stock ?: 0)) quantity++ },
+                                enabled = quantity < (selectedProduct!!.stock ?: 0)
+                            ) {
+                                Icon(Icons.Default.Add, "Más")
+                            }
+                            
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                "Total: $${selectedProduct!!.price * quantity}",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        if ((selectedProduct!!.stock ?: 0) <= 5) {
+                            Text(
+                                "¡Sólo quedan ${selectedProduct!!.stock} unidades!",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+
                     Text("Tipo de orden:")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(selected = orderType == "online",   onClick = { orderType = "online"   }, label = { Text("En línea") })
@@ -150,10 +202,13 @@ fun HomeBuyerScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    val store = state.selectedStore ?: return@Button
-                    viewModel.createOrder(store.id, orderType, listOf(selectedProduct!!.id to 1))
-                }) { Text("Confirmar") }
+                Button(
+                    onClick = {
+                        val store = state.selectedStore ?: return@Button
+                        viewModel.createOrder(store.id, orderType, listOf(selectedProduct!!.id to quantity))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Confirmar ($${selectedProduct!!.price * quantity})") }
             },
             dismissButton = { TextButton(onClick = { showOrderDialog = false }) { Text("Cancelar") } }
         )
@@ -164,6 +219,8 @@ fun HomeBuyerScreen(
 @Composable
 private fun StoreListScreen(
     stores: List<BuyerStore>,
+    selectedCategory: String,
+    onCategorySelect: (String) -> Unit,
     isLoading: Boolean,
     onRefresh: () -> Unit,
     onSelectStore: (BuyerStore) -> Unit,
@@ -181,18 +238,46 @@ private fun StoreListScreen(
             )
         }
     ) { padding ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // Fila de Categorías
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(stores) { store ->
-                    StoreCard(store, onSelectStore, onMapClick)
+                item {
+                    FilterChip(
+                        selected = selectedCategory == "Todas",
+                        onClick = { onCategorySelect("Todas") },
+                        label = { Text("Todas") }
+                    )
+                }
+                items(STORE_CATEGORIES) { category ->
+                    FilterChip(
+                        selected = selectedCategory == category,
+                        onClick = { onCategorySelect(category) },
+                        label = { Text(category) }
+                    )
+                }
+            }
+
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (stores.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay tiendas en esta categoría", color = MaterialTheme.colorScheme.outline)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(stores) { store ->
+                        StoreCard(store, onSelectStore, onMapClick)
+                    }
                 }
             }
         }
@@ -263,9 +348,9 @@ private fun ProductCard(product: Product, onOrder: (Product) -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("$${product.price}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
-                Text("Stock: ${product.stock}", style = MaterialTheme.typography.bodySmall)
+                Text("Stock disponible: ${product.stock}", style = MaterialTheme.typography.bodySmall)
             }
-            Button(onClick = { onOrder(product) }, enabled = product.stock > 0) {
+            Button(onClick = { onOrder(product) }, enabled = (product.stock ?: 0) > 0) {
                 Text("Ordenar")
             }
         }

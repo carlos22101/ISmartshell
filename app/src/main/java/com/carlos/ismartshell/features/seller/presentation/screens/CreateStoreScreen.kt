@@ -69,6 +69,7 @@ fun CreateStoreScreen(
             onBack        = { viewModel.clearSelectedStore() },
             onAddProduct  = { showProductDialog = true },
             onDeleteProduct = { viewModel.deleteProduct(it) },
+            onUpdateStock = { id, stock -> viewModel.updateProductStock(id, stock) },
             onScanQr      = { showQrScanner = true },
             onDeleteStore  = { viewModel.deleteStore(state.selectedStore!!.id) },
             onClearScanned = { viewModel.clearScannedOrder() },
@@ -99,6 +100,7 @@ fun CreateStoreScreen(
     if (showLocationPicker) {
         LocationPickerScreen(
             initialLocation = selectedLocation,
+            userLocation = state.userLocation,
             onLocationSelected = {
                 selectedLocation = it
                 showLocationPicker = false
@@ -181,6 +183,7 @@ private fun SellerStoreDetailScreen(
     onBack: () -> Unit,
     onAddProduct: () -> Unit,
     onDeleteProduct: (String) -> Unit,
+    onUpdateStock: (String, Int) -> Unit,
     onScanQr: () -> Unit,
     onDeleteStore: () -> Unit,
     onClearScanned: () -> Unit,
@@ -188,6 +191,7 @@ private fun SellerStoreDetailScreen(
 ) {
     var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Productos", "Órdenes")
+    var showDeleteStoreConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -196,7 +200,9 @@ private fun SellerStoreDetailScreen(
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Volver") } },
                 actions = {
                     IconButton(onClick = onScanQr) { Icon(Icons.Default.QrCodeScanner, "Escanear QR") }
-                    IconButton(onClick = onDeleteStore) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
+                    IconButton(onClick = { showDeleteStoreConfirm = true }) { 
+                        Icon(Icons.Default.Delete, "Eliminar tienda", tint = MaterialTheme.colorScheme.error) 
+                    }
                 }
             )
         },
@@ -213,10 +219,25 @@ private fun SellerStoreDetailScreen(
                 }
             }
             when (tabIndex) {
-                0 -> ProductsTab(products, onDeleteProduct)
+                0 -> ProductsTab(products, onDeleteProduct, onUpdateStock)
                 1 -> OrdersTab(orders, onMarkAsReady)
             }
         }
+    }
+
+    if (showDeleteStoreConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteStoreConfirm = false },
+            title = { Text("Eliminar Negocio") },
+            text = { Text("¿Deseas eliminar '${store.name}' permanentemente? Se borrarán todos sus productos y pedidos.") },
+            confirmButton = {
+                Button(
+                    onClick = { onDeleteStore(); showDeleteStoreConfirm = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Eliminar") }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteStoreConfirm = false }) { Text("Cancelar") } }
+        )
     }
 
     if (scannedOrder != null) {
@@ -254,7 +275,14 @@ private fun SellerStoreDetailScreen(
 }
 
 @Composable
-private fun ProductsTab(products: List<Product>, onDelete: (String) -> Unit) {
+private fun ProductsTab(
+    products: List<Product>, 
+    onDelete: (String) -> Unit,
+    onUpdateStock: (String, Int) -> Unit
+) {
+    var productToDelete by remember { mutableStateOf<Product?>(null) }
+    var productToUpdateStock by remember { mutableStateOf<Product?>(null) }
+
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -266,13 +294,70 @@ private fun ProductsTab(products: List<Product>, onDelete: (String) -> Unit) {
                     Column(Modifier.weight(1f)) {
                         Text(product.name, fontWeight = FontWeight.Bold)
                         Text("$${product.price}")
+                        Text(
+                            "Stock: ${product.stock}", 
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { productToUpdateStock = product }
+                        )
                     }
-                    IconButton(onClick = { onDelete(product.id) }) {
-                        Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                    Row {
+                        IconButton(onClick = { productToUpdateStock = product }) {
+                            Icon(Icons.Default.Edit, "Editar stock")
+                        }
+                        IconButton(onClick = { productToDelete = product }) {
+                            Icon(Icons.Default.Delete, "Eliminar producto", tint = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
             }
         }
+    }
+
+    productToDelete?.let { product ->
+        AlertDialog(
+            onDismissRequest = { productToDelete = null },
+            title = { Text("Eliminar Producto") },
+            text = { Text("¿Deseas eliminar '${product.name}' permanentemente?") },
+            confirmButton = {
+                Button(
+                    onClick = { onDelete(product.id); productToDelete = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Eliminar") }
+            },
+            dismissButton = { TextButton(onClick = { productToDelete = null }) { Text("Cancelar") } }
+        )
+    }
+
+    productToUpdateStock?.let { product ->
+        var newStock by remember { mutableStateOf(product.stock.toString()) }
+        AlertDialog(
+            onDismissRequest = { productToUpdateStock = null },
+            title = { Text("Actualizar Stock") },
+            text = {
+                Column {
+                    Text("Producto: ${product.name}")
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newStock,
+                        onValueChange = { newStock = it },
+                        label = { Text("Nuevo Stock") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val stockInt = newStock.toIntOrNull() ?: product.stock
+                        onUpdateStock(product.id, stockInt)
+                        productToUpdateStock = null
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = { TextButton(onClick = { productToUpdateStock = null }) { Text("Cancelar") } }
+        )
     }
 }
 
@@ -325,6 +410,11 @@ private fun OrdersTab(orders: List<Order>, onMarkAsReady: (String) -> Unit) {
     }
 }
 
+val STORE_CATEGORIES = listOf(
+    "Abarrotes", "Restaurante", "Farmacia", "Ferretería", "Ropa", "Electrónica", "Salud", "Papelería", "Construcción", "Otros"
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateStoreDialog(
     selectedLocation: LatLng?,
@@ -334,21 +424,67 @@ private fun CreateStoreDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(STORE_CATEGORIES.first()) }
+    var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nueva tienda") },
         text  = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") })
-                OutlinedTextField(value = type, onValueChange = { type = it }, label = { Text("Tipo") })
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name, 
+                    onValueChange = { name = it }, 
+                    label = { Text("Nombre de la tienda") }, 
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description, 
+                    onValueChange = { description = it }, 
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 
-                Button(onClick = onPickLocation, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.LocationOn, null)
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = type,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Giro / Categoría") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        STORE_CATEGORIES.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category) },
+                                onClick = {
+                                    type = category
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                Button(
+                    onClick = onPickLocation, 
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedLocation != null) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(if (selectedLocation != null) Icons.Default.LocationOn else Icons.Default.AddLocation, null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (selectedLocation != null) "Ubicación lista" else "Marcar en mapa")
+                    Text(if (selectedLocation != null) "Ubicación seleccionada" else "Seleccionar ubicación")
                 }
             }
         },
@@ -356,7 +492,7 @@ private fun CreateStoreDialog(
             Button(
                 enabled = name.isNotBlank() && selectedLocation != null,
                 onClick = { onCreate(name, description, type, selectedLocation!!) }
-            ) { Text("Crear") }
+            ) { Text("Crear Tienda") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
@@ -387,7 +523,7 @@ private fun CreateProductDialog(
                 onCreate(name, description, price.toDoubleOrNull() ?: 0.0, stock.toIntOrNull() ?: 0)
             }) { Text("Agregar") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = { onDismiss() }) { Text("Cancelar") } }
     )
 }
 
@@ -410,7 +546,7 @@ private fun QrScannerOverlay(
                     AndroidView(
                         factory = { ctx ->
                             PreviewView(ctx).also { pv ->
-                                qrScannerManager.startScanning(lifecycleOwner, pv, onQrDetected)
+                                qrScannerManager.startScanning(lifecycleOwner, pv, onQrDetected = onQrDetected)
                             }
                         },
                         modifier = Modifier.fillMaxSize()

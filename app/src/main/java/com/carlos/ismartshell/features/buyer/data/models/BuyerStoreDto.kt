@@ -8,8 +8,8 @@ object BuyerStoreDto {
         @SerializedName("id", alternate = ["ID"]) val id: String? = null,
         @SerializedName("business_id", alternate = ["BusinessID"]) val businessId: String? = null,
         @SerializedName("name", alternate = ["Name"]) val name: String? = null,
-        @SerializedName("latitude", alternate = ["Latitude"]) val latitude: Double? = null,
-        @SerializedName("longitude", alternate = ["Longitude"]) val longitude: Double? = null,
+        @SerializedName("latitude", alternate = ["Latitude", "lat", "Lat"]) val latitude: Double? = null,
+        @SerializedName("longitude", alternate = ["Longitude", "lng", "Lng"]) val longitude: Double? = null,
         @SerializedName("active", alternate = ["Active"]) val active: Boolean? = null
     )
 
@@ -19,8 +19,8 @@ object BuyerStoreDto {
         @SerializedName("name", alternate = ["Name"]) val name: String? = null,
         @SerializedName("description", alternate = ["Description"]) val description: String? = null,
         @SerializedName("type", alternate = ["Type"]) val type: String? = null,
-        @SerializedName("latitude", alternate = ["Latitude"]) val latitude: Double? = null,
-        @SerializedName("longitude", alternate = ["Longitude"]) val longitude: Double? = null,
+        @SerializedName("latitude", alternate = ["Latitude", "lat", "Lat"]) val latitude: Double? = null,
+        @SerializedName("longitude", alternate = ["Longitude", "lng", "Lng"]) val longitude: Double? = null,
         @SerializedName("active", alternate = ["Active"]) val active: Boolean? = null,
         @SerializedName("delivery_points", alternate = ["DeliveryPoints"]) val deliveryPoints: List<DeliveryPointDto>? = null,
         @SerializedName("products", alternate = ["Products"]) val products: List<ProductDto>? = null,
@@ -70,6 +70,6 @@ object BuyerStoreDto {
         @SerializedName("type") val type: String,
         @SerializedName("items") val items: List<CreateOrderItemRequest>,
         @SerializedName("delivery_point_id") val deliveryPointId: String? = null,
-        @SerializedName("reservation_hours") val reservationHours: Int = 24
+        @SerializedName("reservation_hours") val reservationHours: Int = 1
     )
 }

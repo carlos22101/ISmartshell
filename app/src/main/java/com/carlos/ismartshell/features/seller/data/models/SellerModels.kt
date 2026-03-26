@@ -53,6 +53,10 @@ object SellerModels {
         @SerializedName("image_url") val imageUrl: String = ""
     )
 
+    data class UpdateStockRequest(
+        @SerializedName("stock") val stock: Int
+    )
+
     data class ScanQrRequest(
         @SerializedName("qr_code") val qrCode: String
     )

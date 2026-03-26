@@ -69,6 +69,12 @@ interface ApiService {
         @Body body: SellerModels.UpdateProductRequest
     ): Response<ApiResponse<BuyerStoreDto.ProductDto>>
 
+    @PATCH("api/v1/products/{id}/stock")
+    suspend fun updateProductStock(
+        @Path("id") id: String,
+        @Body body: SellerModels.UpdateStockRequest
+    ): Response<ApiResponse<BuyerStoreDto.ProductDto>>
+
     @DELETE("api/v1/products/{id}")
     suspend fun deleteProduct(@Path("id") id: String): Response<Unit>
 
