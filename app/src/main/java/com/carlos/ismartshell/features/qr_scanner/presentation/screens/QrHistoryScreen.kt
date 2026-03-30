@@ -1,4 +1,4 @@
-package com.carlos.ismartshell.features.buyer.presentation.screens
+package com.carlos.ismartshell.features.qr_scanner.presentation.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*

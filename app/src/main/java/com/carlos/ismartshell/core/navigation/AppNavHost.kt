@@ -23,6 +23,8 @@ import com.carlos.ismartshell.features.buyer.presentation.screens.*
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreScreen
 import javax.inject.Inject
 import androidx.lifecycle.ViewModel
+import com.carlos.ismartshell.features.maps.presentation.screens.StoreMapScreen
+import com.carlos.ismartshell.features.qr_scanner.presentation.screens.QrHistoryScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 

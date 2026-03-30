@@ -22,6 +22,7 @@ import com.carlos.ismartshell.core.util.QrCodeGenerator
 import com.carlos.ismartshell.features.buyer.domain.entities.BuyerStore
 import com.carlos.ismartshell.features.buyer.domain.entities.Product
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
+import com.carlos.ismartshell.features.maps.presentation.screens.NearbyStoresMapScreen
 import com.carlos.ismartshell.features.seller.presentation.screens.STORE_CATEGORIES
 
 @OptIn(ExperimentalMaterial3Api::class)

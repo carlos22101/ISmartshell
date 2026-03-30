@@ -1,6 +1,6 @@
-package com.carlos.ismartshell.features.buyer.domain.repositories
+package com.carlos.ismartshell.features.qr_scanner.domain.repositories
 
-import com.carlos.ismartshell.features.buyer.domain.entities.QrScan
+import com.carlos.ismartshell.features.qr_scanner.domain.entities.QrScan
 import kotlinx.coroutines.flow.Flow
 
 interface QrScanRepository {

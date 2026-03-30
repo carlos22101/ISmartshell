@@ -1,8 +1,9 @@
 package com.carlos.ismartshell.features.buyer.domain.usecases
 
 import com.carlos.ismartshell.features.buyer.domain.entities.*
-import com.carlos.ismartshell.features.buyer.domain.repositories.QrScanRepository
+import com.carlos.ismartshell.features.qr_scanner.domain.repositories.QrScanRepository
 import com.carlos.ismartshell.features.buyer.domain.repositories.StoreRepository
+import com.carlos.ismartshell.features.qr_scanner.domain.entities.QrScan
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

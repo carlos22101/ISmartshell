@@ -1,4 +1,4 @@
-package com.carlos.ismartshell.features.buyer.presentation.viewmodels
+package com.carlos.ismartshell.features.maps.presentation.viewmodels
 
 import android.location.Location
 import androidx.lifecycle.ViewModel

@@ -1,4 +1,4 @@
-package com.carlos.ismartshell.features.buyer.domain.entities
+package com.carlos.ismartshell.features.qr_scanner.domain.entities
 
 data class QrScan(
     val id: Int,

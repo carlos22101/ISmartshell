@@ -2,9 +2,9 @@ package com.carlos.ismartshell.core.di
 
 import com.carlos.ismartshell.features.auth.data.repositories.AuthRepository
 import com.carlos.ismartshell.features.auth.data.repositories.AuthRepositoryImpl
-import com.carlos.ismartshell.features.buyer.data.repositories.QrScanRepositoryImpl
+import com.carlos.ismartshell.features.qr_scanner.data.repositories.QrScanRepositoryImpl
 import com.carlos.ismartshell.features.buyer.data.repositories.StoreRepositoryImpl
-import com.carlos.ismartshell.features.buyer.domain.repositories.QrScanRepository
+import com.carlos.ismartshell.features.qr_scanner.domain.repositories.QrScanRepository
 import com.carlos.ismartshell.features.buyer.domain.repositories.StoreRepository
 import com.carlos.ismartshell.features.seller.data.repositories.SellerRepositoryImpl
 import com.carlos.ismartshell.features.seller.domain.repositories.SellerRepository

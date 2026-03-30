@@ -1,4 +1,4 @@
-package com.carlos.ismartshell.features.buyer.presentation.viewmodels
+package com.carlos.ismartshell.features.qr_scanner.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

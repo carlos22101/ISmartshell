@@ -1,10 +1,10 @@
-package com.carlos.ismartshell.features.buyer.data.repositories
+package com.carlos.ismartshell.features.qr_scanner.data.repositories
 
 import com.carlos.ismartshell.core.database.dao.QrScanDao
 import com.carlos.ismartshell.core.database.entities.QrScanEntity
-import com.carlos.ismartshell.features.buyer.data.mappers.QrScanMapper
-import com.carlos.ismartshell.features.buyer.domain.entities.QrScan
-import com.carlos.ismartshell.features.buyer.domain.repositories.QrScanRepository
+import com.carlos.ismartshell.features.qr_scanner.domain.entities.QrScan
+import com.carlos.ismartshell.features.qr_scanner.domain.repositories.QrScanRepository
+import com.carlos.ismartshell.features.qr_scanner.data.mappers.QrScanMapper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
