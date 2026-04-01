@@ -55,6 +55,7 @@ android {
 }
 
 dependencies {
+
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -64,6 +65,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Google Fonts (Material Theme Builder)
+    implementation(libs.androidx.compose.ui.text.google.fonts)
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -108,7 +112,7 @@ dependencies {
     implementation("com.mapbox.maps:android:10.16.0")
     implementation("com.mapbox.extension:maps-compose:0.1.0")
 
-    // Location (needed for user location regardless of map provider)
+    // Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
