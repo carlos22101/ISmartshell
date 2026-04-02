@@ -35,13 +35,14 @@ fun RegisterScreen(
     onGoToLogin: () -> Unit,
     viewModel: RegisterViewModel = hiltViewModel()
 ) {
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var name            by remember { mutableStateOf("") }
-    var email           by remember { mutableStateOf("") }
-    var password        by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isSeller        by remember { mutableStateOf(false) }
+    var isSeller by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) {
@@ -53,27 +54,29 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color(0xFFFFF9EE))
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
             .padding(top = 48.dp, bottom = 40.dp)
     ) {
+
         Text(
             text = "Crear cuenta",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            color = Color(0xFF1E1B13)
         )
+
         Spacer(Modifier.height(4.dp))
+
         Text(
             text = "Únete a iSmartShell",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color(0xFF6B7280)
         )
 
         Spacer(Modifier.height(28.dp))
 
-        // ── Campos ────────────────────────────────────────────────────
         RegisterField(
             value = name,
             onValueChange = { name = it },
@@ -81,6 +84,7 @@ fun RegisterScreen(
             icon = Icons.Default.Person,
             isActive = name.isNotEmpty()
         )
+
         Spacer(Modifier.height(12.dp))
 
         RegisterField(
@@ -91,6 +95,7 @@ fun RegisterScreen(
             keyboardType = KeyboardType.Email,
             isActive = email.isNotEmpty()
         )
+
         Spacer(Modifier.height(12.dp))
 
         RegisterField(
@@ -107,20 +112,20 @@ fun RegisterScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // ── Selector de rol ───────────────────────────────────────────
         Text(
             text = "Selecciona tu rol",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground
+            color = Color(0xFF1E1B13)
         )
+
         Spacer(Modifier.height(12.dp))
 
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Card Comprador
+
             RoleCard(
                 selected = !isSeller,
                 onClick = { isSeller = false },
@@ -131,7 +136,7 @@ fun RegisterScreen(
                 selectedBg = Color(0xFFFFF3E0),
                 modifier = Modifier.weight(1f)
             )
-            // Card Vendedor
+
             RoleCard(
                 selected = isSeller,
                 onClick = { isSeller = true },
@@ -146,8 +151,8 @@ fun RegisterScreen(
 
         Spacer(Modifier.height(28.dp))
 
-        // ── Error ─────────────────────────────────────────────────────
         if (uiState is AuthUiState.Error) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,27 +161,32 @@ fun RegisterScreen(
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 Icon(
                     Icons.Default.Warning,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.size(16.dp)
                 )
+
                 Spacer(Modifier.width(8.dp))
+
                 Text(
                     text = (uiState as AuthUiState.Error).message,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+
             Spacer(Modifier.height(16.dp))
         }
 
-        // ── Botón principal ───────────────────────────────────────────
         Button(
             onClick = {
                 viewModel.register(
-                    name.trim(), email.trim(), password,
+                    name.trim(),
+                    email.trim(),
+                    password,
                     if (isSeller) "seller" else "buyer"
                 )
             },
@@ -191,13 +201,17 @@ fun RegisterScreen(
             ),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
         ) {
+
             if (uiState is AuthUiState.Loading) {
+
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
                     color = Color.White,
                     strokeWidth = 2.5.dp
                 )
+
             } else {
+
                 Text(
                     "Registrarse",
                     fontWeight = FontWeight.Bold,
@@ -209,16 +223,17 @@ fun RegisterScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Link a login ──────────────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
+
             Text(
                 "¿Ya tienes cuenta? ",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color(0xFF6B7280),
                 fontSize = 14.sp
             )
+
             Text(
                 "Inicia sesión",
                 color = BrandPurple,
@@ -230,7 +245,6 @@ fun RegisterScreen(
     }
 }
 
-// ── Composable reutilizable para campos ───────────────────────────────
 @Composable
 private fun RegisterField(
     value: String,
@@ -243,44 +257,53 @@ private fun RegisterField(
     passwordVisible: Boolean = false,
     onTogglePassword: (() -> Unit)? = null
 ) {
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        placeholder = { Text(placeholder, color = Color(0xFF9CA3AF)) },
+
         leadingIcon = {
             Icon(
                 icon,
                 null,
-                tint = if (isActive) BrandOrange else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (isActive) BrandOrange else Color(0xFF9CA3AF),
                 modifier = Modifier.size(20.dp)
             )
         },
+
         trailingIcon = if (isPassword) ({
             IconButton(onClick = { onTogglePassword?.invoke() }) {
+
                 Icon(
                     if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = Color(0xFF9CA3AF),
                     modifier = Modifier.size(20.dp)
                 )
             }
         }) else null,
-        visualTransformation = if (isPassword && !passwordVisible)
-            PasswordVisualTransformation() else VisualTransformation.None,
+
+        visualTransformation =
+            if (isPassword && !passwordVisible)
+                PasswordVisualTransformation()
+            else
+                VisualTransformation.None,
+
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         shape = RoundedCornerShape(14.dp),
+
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = BrandOrange,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+            unfocusedBorderColor = Color(0xFFE5E7EB),
+            focusedContainerColor = Color(0xFFFFF7F0),
+            unfocusedContainerColor = Color.White
         )
     )
 }
 
-// ── Card de selección de rol ──────────────────────────────────────────
 @Composable
 private fun RoleCard(
     selected: Boolean,
@@ -292,15 +315,11 @@ private fun RoleCard(
     selectedBg: Color,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (selected) selectedColor else MaterialTheme.colorScheme.outlineVariant
-    // Fondo: cuando seleccionado usa primaryContainer del tema (se adapta dark/light),
-    // cuando no seleccionado usa surfaceContainer del tema
-    val bgColor = if (selected)
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-    else
-        MaterialTheme.colorScheme.surfaceContainer
-    val iconTint   = if (selected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant
-    val titleColor = if (selected) selectedColor else MaterialTheme.colorScheme.onSurface
+
+    val borderColor = if (selected) selectedColor else Color(0xFFE5E7EB)
+    val bgColor = if (selected) selectedBg else Color.White
+    val iconTint = if (selected) selectedColor else Color(0xFF9CA3AF)
+    val titleColor = if (selected) selectedColor else Color(0xFF1E1B13)
     val borderWidth = if (selected) 2.dp else 1.dp
 
     Column(
@@ -312,23 +331,28 @@ private fun RoleCard(
             .padding(14.dp),
         horizontalAlignment = Alignment.Start
     ) {
+
         Icon(
             icon,
             contentDescription = null,
             tint = iconTint,
             modifier = Modifier.size(28.dp)
         )
+
         Spacer(Modifier.height(8.dp))
+
         Text(
             text = title,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             color = titleColor
         )
+
         Text(
             text = subtitle,
             fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color(0xFF6B7280)
         )
     }
 }
+
