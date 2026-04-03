@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -37,97 +38,57 @@ private val WarmWhite   = Color(0xFFFFF9EE)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeBuyerScreen(
-    onNavigateToMap: (businessId: String) -> Unit,
-    viewModel: HomeBuyerViewModel = hiltViewModel()
-) {
+fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: HomeBuyerViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showOrderDialog by remember { mutableStateOf(false) }
-    var selectedProduct by remember { mutableStateOf<Product?>(null) }
-    var orderType by remember { mutableStateOf("online") }
-    var quantity by remember { mutableIntStateOf(1) }
-
+    var showOrderDialog  by remember { mutableStateOf(false) }
+    var selectedProduct  by remember { mutableStateOf<Product?>(null) }
+    var orderType        by remember { mutableStateOf("online") }
+    var quantity         by remember { mutableIntStateOf(1) }
     var selectedCategory by remember { mutableStateOf("Todas") }
     val filteredStores = remember(state.stores, selectedCategory) {
-        if (selectedCategory == "Todas") state.stores
-        else state.stores.filter { it.type == selectedCategory }
+        if (selectedCategory == "Todas") state.stores else state.stores.filter { it.type == selectedCategory }
     }
-
     var isMapViewActive by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.orderSuccess) {
-        if (state.orderSuccess != null) showOrderDialog = false
-    }
+    LaunchedEffect(state.orderSuccess) { if (state.orderSuccess != null) showOrderDialog = false }
 
     if (state.selectedStore == null) {
         if (isMapViewActive) {
-            NearbyStoresMapScreen(
-                stores = filteredStores,
-                userLocation = state.userLocation,
+            NearbyStoresMapScreen(stores = filteredStores, userLocation = state.userLocation,
                 onBack = { isMapViewActive = false },
-                onSelectStore = { storeId ->
-                    viewModel.selectStore(storeId)
-                    isMapViewActive = false
-                }
-            )
+                onSelectStore = { storeId -> viewModel.selectStore(storeId); isMapViewActive = false })
         } else {
-            StoreListScreen(
-                stores = filteredStores,
-                selectedCategory = selectedCategory,
-                onCategorySelect = { selectedCategory = it },
-                isLoading = state.isLoading,
-                onRefresh = { viewModel.loadStores() },
-                onSelectStore = { viewModel.selectStore(it.id) },
-                onMapClick = onNavigateToMap,
-                onOpenMapMode = { isMapViewActive = true }
-            )
+            StoreListScreen(stores = filteredStores, selectedCategory = selectedCategory,
+                onCategorySelect = { selectedCategory = it }, isLoading = state.isLoading,
+                onRefresh = { viewModel.loadStores() }, onSelectStore = { viewModel.selectStore(it.id) },
+                onMapClick = onNavigateToMap, onOpenMapMode = { isMapViewActive = true })
         }
     } else {
-        StoreDetailScreen(
-            store      = state.selectedStore!!,
-            products   = state.products,
-            onBack     = { viewModel.clearSelectedStore() },
+        StoreDetailScreen(store = state.selectedStore!!, products = state.products,
+            onBack = { viewModel.clearSelectedStore() },
             onMapClick = { onNavigateToMap(state.selectedStore!!.id) },
-            onOrderProduct = { product ->
-                selectedProduct = product
-                quantity = 1
-                showOrderDialog = true
-            }
-        )
+            onOrderProduct = { product -> selectedProduct = product; quantity = 1; showOrderDialog = true })
     }
 
     state.error?.let { msg ->
-        AlertDialog(
-            onDismissRequest = { viewModel.clearError() },
-            title = { Text("Error") },
-            text  = { Text(msg) },
-            confirmButton = { TextButton(onClick = { viewModel.clearError() }) { Text("OK") } }
-        )
+        AlertDialog(onDismissRequest = { viewModel.clearError() },
+            title = { Text("Error") }, text = { Text(msg) },
+            confirmButton = { TextButton(onClick = { viewModel.clearError() }) { Text("OK") } })
     }
 
     state.orderSuccess?.let { order ->
-        AlertDialog(
-            onDismissRequest = { viewModel.clearOrderSuccess() },
-            title = {
-                Text("¡Pedido creado!", textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = BrandNavy, fontWeight = FontWeight.Bold)
-            },
+        AlertDialog(onDismissRequest = { viewModel.clearOrderSuccess() }, containerColor = Color.White,
+            title = { Text("¡Pedido creado!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                fontWeight = FontWeight.Bold, color = BrandNavy) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Text("Total: $${order.total}", fontWeight = FontWeight.Bold, color = BrandOrange)
-                    val qrBitmap = remember(order.qrCode) {
-                        order.qrCode?.let { QrCodeGenerator.generateQrCode(it, 400) }
-                    }
+                    val qrBitmap = remember(order.qrCode) { order.qrCode?.let { QrCodeGenerator.generateQrCode(it, 400) } }
                     if (qrBitmap != null) {
                         Spacer(Modifier.height(16.dp))
-                        Image(bitmap = qrBitmap.asImageBitmap(),
-                            contentDescription = "Código QR del pedido",
-                            modifier = Modifier.size(200.dp))
+                        Image(bitmap = qrBitmap.asImageBitmap(), contentDescription = null, modifier = Modifier.size(200.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("Muestra este QR al vendedor",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B7280))
+                        Text("Muestra este QR al vendedor", style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
                     }
                     if (order.type == "reserved") {
                         Spacer(Modifier.height(8.dp))
@@ -137,55 +98,57 @@ fun HomeBuyerScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.clearOrderSuccess() },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
-                ) { Text("Entendido", color = Color.White, fontWeight = FontWeight.Bold) }
-            }
-        )
+                Button(onClick = { viewModel.clearOrderSuccess() }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(50), colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)) {
+                    Text("Entendido", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            })
     }
 
     if (showOrderDialog && selectedProduct != null) {
-        AlertDialog(
-            onDismissRequest = { showOrderDialog = false },
+        AlertDialog(onDismissRequest = { showOrderDialog = false }, containerColor = Color.White,
             title = { Text("Ordenar: ${selectedProduct!!.name}", fontWeight = FontWeight.Bold, color = BrandNavy) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Precio unitario: $${selectedProduct!!.price}")
-                    Column {
-                        Text("Cantidad:", style = MaterialTheme.typography.labelMedium)
-                        Row(verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxWidth()) {
-                            IconButton(onClick = { if (quantity > 1) quantity-- }, enabled = quantity > 1) {
-                                Icon(Icons.Default.Remove, "Menos", tint = BrandOrange)
+                    Text("Precio unitario: $${selectedProduct!!.price}", color = Color(0xFF6B7280))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF3F4F6)),
+                            contentAlignment = Alignment.Center) {
+                            IconButton(onClick = { if (quantity > 1) quantity-- }, enabled = quantity > 1,
+                                modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.Default.Remove, null, tint = Color(0xFF6B7280), modifier = Modifier.size(18.dp))
                             }
-                            Text(quantity.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        }
+                        Text(quantity.toString(), style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold, color = BrandNavy, modifier = Modifier.padding(horizontal = 20.dp))
+                        Box(Modifier.size(36.dp).clip(CircleShape).background(BrandOrange), contentAlignment = Alignment.Center) {
                             IconButton(onClick = { if (quantity < (selectedProduct!!.stock ?: 0)) quantity++ },
-                                enabled = quantity < (selectedProduct!!.stock ?: 0)) {
-                                Icon(Icons.Default.Add, "Más", tint = BrandOrange)
+                                enabled = quantity < (selectedProduct!!.stock ?: 0), modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(18.dp))
                             }
-                            Spacer(Modifier.weight(1f))
-                            Text("Total: $${selectedProduct!!.price * quantity}",
-                                color = BrandOrange, fontWeight = FontWeight.ExtraBold)
                         }
-                        if ((selectedProduct!!.stock ?: 0) <= 5) {
-                            Text("¡Sólo quedan ${selectedProduct!!.stock} unidades!",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall)
-                        }
+                        Spacer(Modifier.weight(1f))
+                        Text("Total: $${selectedProduct!!.price * quantity}", color = BrandOrange,
+                            fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                     }
-                    Text("Tipo de orden:")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if ((selectedProduct!!.stock ?: 0) <= 5) {
+                        Text("¡Sólo quedan ${selectedProduct!!.stock} unidades!",
+                            color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    }
+                    Text("Tipo de orden", color = BrandNavy, fontWeight = FontWeight.Medium)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(selected = orderType == "online", onClick = { orderType = "online" },
-                            label = { Text("En línea") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = BrandOrange, selectedLabelColor = Color.White))
+                            label = { Text("En línea") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BrandOrange,
+                                selectedLabelColor = Color.White, containerColor = Color.White, labelColor = BrandOrange),
+                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = orderType == "online",
+                                selectedBorderColor = BrandOrange, borderColor = BrandOrange))
                         FilterChip(selected = orderType == "reserved", onClick = { orderType = "reserved" },
-                            label = { Text("Apartar") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = BrandOrange, selectedLabelColor = Color.White))
+                            label = { Text("Apartar") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BrandOrange,
+                                selectedLabelColor = Color.White, containerColor = Color.White, labelColor = BrandOrange),
+                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = orderType == "reserved",
+                                selectedBorderColor = BrandOrange, borderColor = BrandOrange))
                     }
                 }
             },
@@ -194,85 +157,55 @@ fun HomeBuyerScreen(
                     val store = state.selectedStore ?: return@Button
                     viewModel.createOrder(store.id, orderType, listOf(selectedProduct!!.id to quantity))
                 }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
-                ) { Text("Confirmar ($${selectedProduct!!.price * quantity})", color = Color.White, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showOrderDialog = false }) {
-                    Text("Cancelar", color = Color(0xFF6B7280))
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)) {
+                    Text("Confirmar ($${selectedProduct!!.price * quantity})", color = Color.White, fontWeight = FontWeight.Bold)
                 }
-            }
-        )
+            },
+            dismissButton = { TextButton(onClick = { showOrderDialog = false }) { Text("Cancelar", color = Color(0xFF6B7280)) } })
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StoreListScreen(
-    stores: List<BuyerStore>,
-    selectedCategory: String,
-    onCategorySelect: (String) -> Unit,
-    isLoading: Boolean,
-    onRefresh: () -> Unit,
-    onSelectStore: (BuyerStore) -> Unit,
-    onMapClick: (String) -> Unit,
-    onOpenMapMode: () -> Unit
+    stores: List<BuyerStore>, selectedCategory: String, onCategorySelect: (String) -> Unit,
+    isLoading: Boolean, onRefresh: () -> Unit, onSelectStore: (BuyerStore) -> Unit,
+    onMapClick: (String) -> Unit, onOpenMapMode: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Tiendas cercanas", color = Color.White, fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = onOpenMapMode) { Icon(Icons.Default.Map, "Ver Mapa", tint = Color.White) }
-                    IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, "Actualizar", tint = Color.White) }
+                    IconButton(onClick = onOpenMapMode) { Icon(Icons.Default.Map, null, tint = Color.White) }
+                    IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, null, tint = Color.White) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
             )
         },
         containerColor = WarmWhite
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            LazyRow(Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
-                    FilterChip(
-                        selected = selectedCategory == "Todas",
-                        onClick = { onCategorySelect("Todas") },
-                        label = { Text("Todas") },
-                        shape = RoundedCornerShape(50),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = BrandOrange,
-                            selectedLabelColor = Color.White,
-                            containerColor = WarmWhite,
-                            labelColor = BrandOrange
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true, selected = selectedCategory == "Todas",
-                            selectedBorderColor = BrandOrange, borderColor = BrandOrange)
-                    )
+                    FilterChip(selected = selectedCategory == "Todas", onClick = { onCategorySelect("Todas") },
+                        label = { Text("Todas") }, shape = RoundedCornerShape(50),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BrandOrange,
+                            selectedLabelColor = Color.White, containerColor = WarmWhite, labelColor = BrandOrange),
+                        border = FilterChipDefaults.filterChipBorder(enabled = true, selected = selectedCategory == "Todas",
+                            selectedBorderColor = BrandOrange, borderColor = BrandOrange))
                 }
                 items(STORE_CATEGORIES) { category ->
-                    FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { onCategorySelect(category) },
-                        label = { Text(category) },
-                        shape = RoundedCornerShape(50),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = BrandOrange,
-                            selectedLabelColor = Color.White,
-                            containerColor = WarmWhite,
-                            labelColor = BrandOrange
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true, selected = selectedCategory == category,
-                            selectedBorderColor = BrandOrange, borderColor = BrandOrange)
-                    )
+                    FilterChip(selected = selectedCategory == category, onClick = { onCategorySelect(category) },
+                        label = { Text(category) }, shape = RoundedCornerShape(50),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BrandOrange,
+                            selectedLabelColor = Color.White, containerColor = WarmWhite, labelColor = BrandOrange),
+                        border = FilterChipDefaults.filterChipBorder(enabled = true, selected = selectedCategory == category,
+                            selectedBorderColor = BrandOrange, borderColor = BrandOrange))
                 }
             }
-
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = BrandOrange)
@@ -282,11 +215,8 @@ private fun StoreListScreen(
                     Text("No hay tiendas en esta categoría", color = Color(0xFF6B7280))
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(stores) { store -> StoreCard(store, onSelectStore, onMapClick) }
                 }
             }
@@ -295,44 +225,19 @@ private fun StoreListScreen(
 }
 
 @Composable
-private fun StoreCard(
-    store: BuyerStore,
-    onSelect: (BuyerStore) -> Unit,
-    onMapClick: (String) -> Unit
-) {
-    // Row exterior: borde naranja 4dp a la izquierda + fondo blanco a la derecha
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
-            .background(Color.White)
-            .clickable { onSelect(store) }
-    ) {
-        // Franja naranja izquierda
-        Box(
-            modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .background(BrandOrange)
-        )
-        // Contenido
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+private fun StoreCard(store: BuyerStore, onSelect: (BuyerStore) -> Unit, onMapClick: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
+        .background(Color.White).clickable { onSelect(store) }) {
+        Box(Modifier.width(4.dp).fillMaxHeight().background(BrandOrange))
+        Row(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(store.name, style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold, color = Color(0xFF1E1B13))
                 Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFFFF3E0))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
+                Box(Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFFF3E0))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)) {
                     Text(store.type, fontSize = 11.sp, color = BrandOrange, fontWeight = FontWeight.Medium)
                 }
                 if (store.description.isNotBlank()) {
@@ -342,7 +247,7 @@ private fun StoreCard(
                 }
             }
             IconButton(onClick = { onMapClick(store.id) }) {
-                Icon(Icons.Default.LocationOn, "Ver en mapa", tint = BrandOrange)
+                Icon(Icons.Default.LocationOn, null, tint = BrandOrange)
             }
         }
     }
@@ -351,36 +256,24 @@ private fun StoreCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StoreDetailScreen(
-    store: BuyerStore,
-    products: List<Product>,
-    onBack: () -> Unit,
-    onMapClick: () -> Unit,
-    onOrderProduct: (Product) -> Unit
+    store: BuyerStore, products: List<Product>,
+    onBack: () -> Unit, onMapClick: () -> Unit, onOrderProduct: (Product) -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(store.name, color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Volver", tint = Color.White) }
-                },
-                actions = {
-                    IconButton(onClick = onMapClick) { Icon(Icons.Default.LocationOn, "Mapa", tint = Color.White) }
-                },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
+                actions = { IconButton(onClick = onMapClick) { Icon(Icons.Default.LocationOn, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
             )
         },
         containerColor = WarmWhite
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Text("Productos", style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold, color = Color(0xFF1E1B13))
-            }
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item { Text("Productos", style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold, color = Color(0xFF1E1B13)) }
             items(products) { product -> ProductCard(product, onOrderProduct) }
         }
     }
@@ -388,25 +281,11 @@ private fun StoreDetailScreen(
 
 @Composable
 private fun ProductCard(product: Product, onOrder: (Product) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
-            .background(Color.White)
-    ) {
-        Box(
-            modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .background(BrandOrange)
-        )
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp)).background(Color.White)) {
+        Box(Modifier.width(4.dp).fillMaxHeight().background(BrandOrange))
+        Row(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(product.name, style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold, color = Color(0xFF1E1B13))
@@ -415,15 +294,10 @@ private fun ProductCard(product: Product, onOrder: (Product) -> Unit) {
                 Text("Stock disponible: ${product.stock}",
                     style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
             }
-            Button(
-                onClick = { onOrder(product) },
-                enabled = (product.stock ?: 0) > 0,
+            Button(onClick = { onOrder(product) }, enabled = (product.stock ?: 0) > 0,
                 shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandOrange,
-                    disabledContainerColor = Color(0xFFE5E7EB)
-                )
-            ) {
+                colors = ButtonDefaults.buttonColors(containerColor = BrandOrange,
+                    disabledContainerColor = Color(0xFFE5E7EB))) {
                 Text("Ordenar", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
