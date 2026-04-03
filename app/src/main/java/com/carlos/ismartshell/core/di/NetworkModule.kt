@@ -18,8 +18,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // Emulador → localhost del host = 10.0.2.2
-    // Dispositivo físico → cambia a la IP de tu máquina en la red local
     private const val BASE_URL = "https://apismart.serviciocdn.icu/"
 
     @Provides

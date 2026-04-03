@@ -1,4 +1,4 @@
-package com.carlos.ismartshell.features.buyer.presentation.screens
+package com.carlos.ismartshell.features.maps.presentation.screens
 
 import android.Manifest
 import android.graphics.Color

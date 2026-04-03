@@ -1,9 +1,9 @@
-package com.carlos.ismartshell.features.buyer.presentation.screens
+package com.carlos.ismartshell.features.maps.presentation.screens
 
 import android.Manifest
 import android.graphics.Color
+import android.location.Location
 import android.view.ViewGroup
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,13 +13,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.carlos.ismartshell.features.buyer.presentation.viewmodels.StoreMapViewModel
+import com.carlos.ismartshell.features.maps.presentation.viewmodels.StoreMapViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -136,7 +135,7 @@ private fun BoxScope.DistanceOverlay(
     if (userLat != null && userLng != null) {
         val distance = remember(userLat, userLng, storeLat, storeLng) {
             val results = FloatArray(1)
-            android.location.Location.distanceBetween(userLat, userLng, storeLat, storeLng, results)
+            Location.distanceBetween(userLat, userLng, storeLat, storeLng, results)
             results[0]
         }
 

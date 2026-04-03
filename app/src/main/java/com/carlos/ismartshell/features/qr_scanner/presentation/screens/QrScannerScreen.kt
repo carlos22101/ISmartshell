@@ -1,4 +1,4 @@
-package com.carlos.ismartshell.features.buyer.presentation.screens
+package com.carlos.ismartshell.features.qr_scanner.presentation.screens
 
 import android.Manifest
 import androidx.camera.view.PreviewView
@@ -9,18 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlos.ismartshell.core.managers.QrScannerManager
-import com.carlos.ismartshell.features.buyer.presentation.viewmodels.QrScannerViewModel
+import com.carlos.ismartshell.features.qr_scanner.presentation.viewmodels.QrScannerViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import dagger.hilt.android.EntryPointAccessors
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable

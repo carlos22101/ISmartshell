@@ -1,8 +1,8 @@
-package com.carlos.ismartshell.features.buyer.presentation.viewmodels
+package com.carlos.ismartshell.features.qr_scanner.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.carlos.ismartshell.features.buyer.domain.entities.QrScan
+import com.carlos.ismartshell.features.qr_scanner.domain.entities.QrScan
 import com.carlos.ismartshell.features.buyer.domain.usecases.ClearQrHistoryUseCase
 import com.carlos.ismartshell.features.buyer.domain.usecases.DeleteQrScanUseCase
 import com.carlos.ismartshell.features.buyer.domain.usecases.GetQrHistoryUseCase
@@ -20,7 +20,7 @@ class QrHistoryViewModel @Inject constructor(
 ) : ViewModel() {
 
     val history = getQrHistoryUseCase()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Companion.WhileSubscribed(5_000), emptyList())
 
     fun delete(scan: QrScan) {
         viewModelScope.launch { deleteQrScanUseCase(scan) }
