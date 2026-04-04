@@ -3,6 +3,7 @@ package com.carlos.ismartshell.features.auth.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlos.ismartshell.core.local.TokenManager
+import com.carlos.ismartshell.core.notifications.FcmTokenSync
 import com.carlos.ismartshell.features.auth.domain.usecases.LoginUseCase
 import com.carlos.ismartshell.features.auth.presentation.screens.AuthUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +15,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val fcmTokenSync: FcmTokenSync
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
@@ -27,6 +29,7 @@ class LoginViewModel @Inject constructor(
                 .onSuccess { (user, token) ->
                     tokenManager.saveSession(token, user.id, user.role, user.name)
                     _uiState.value = AuthUiState.Success(user.role)
+                    launch { fcmTokenSync.syncToken() }
                 }
                 .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Error") }
         }
