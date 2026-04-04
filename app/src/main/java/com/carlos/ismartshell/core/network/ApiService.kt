@@ -101,6 +101,6 @@ interface ApiService {
     @POST("api/v1/orders/{id}/ready")
     suspend fun markOrderAsReady(@Path("id") id: String): Response<ApiResponse<BuyerStoreDto.OrderDto>>
 
-    @POST("users/fcm-token")
+    @POST("api/v1/users/fcm-token")
     suspend fun registerFcmToken(@Body request: FcmTokenRequest): Response<Unit>
 }
