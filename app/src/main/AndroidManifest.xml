@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <application
         android:name=".IsmartshellaApplication"
         android:allowBackup="true"
@@ -16,6 +19,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Ismartshell"
         android:usesCleartextTraffic="true">
+        <service
+            android:name=".core.notifications.FcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
 
         <meta-data
             android:name="com.mapbox.token"

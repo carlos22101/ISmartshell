@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "43217953759",
+    "project_id": "ismartshell",
+    "storage_bucket": "ismartshell.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43217953759:android:4f20a2aad289d80fee1a6a",
+        "android_client_info": {
+          "package_name": "com.carlos.ismartshell"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2LKJrRnVmn-Yg6CKMB13wvc_SGk-wyeM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,12 +1,13 @@
 package com.carlos.ismartshell.core.network
 
+import com.carlos.ismartshell.core.notifications.FcmTokenRequest
 import com.carlos.ismartshell.features.auth.data.models.AuthModels
 import com.carlos.ismartshell.features.buyer.data.models.BuyerStoreDto
 import com.carlos.ismartshell.features.seller.data.models.SellerModels
 import retrofit2.Response
 import retrofit2.http.*
 
-// Wrapper genérico que refleja {"data": T, "error": "..."} del API Go
+
 data class ApiResponse<T>(val data: T? = null, val error: String? = null)
 
 interface ApiService {
@@ -99,4 +100,7 @@ interface ApiService {
 
     @POST("api/v1/orders/{id}/ready")
     suspend fun markOrderAsReady(@Path("id") id: String): Response<ApiResponse<BuyerStoreDto.OrderDto>>
+
+    @POST("api/v1/users/fcm-token")
+    suspend fun registerFcmToken(@Body request: FcmTokenRequest): Response<Unit>
 }

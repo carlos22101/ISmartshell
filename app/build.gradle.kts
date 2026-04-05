@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -121,4 +122,7 @@ dependencies {
 
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
+    //FCM
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }
