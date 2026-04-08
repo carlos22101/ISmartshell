@@ -125,4 +125,8 @@ dependencies {
     //FCM
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    //workmanagers
+    implementation(libs.work.runtime)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
 }
