@@ -40,34 +40,40 @@ private val WarmWhite   = Color(0xFFFFF9EE)
 @Composable
 fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: HomeBuyerViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showOrderDialog  by remember { mutableStateOf(false) }
-    var selectedProduct  by remember { mutableStateOf<Product?>(null) }
-    var orderType        by remember { mutableStateOf("online") }
-    var quantity         by remember { mutableIntStateOf(1) }
-    var selectedCategory by remember { mutableStateOf("Todas") }
-    val filteredStores = remember(state.stores, selectedCategory) {
-        if (selectedCategory == "Todas") state.stores else state.stores.filter { it.type == selectedCategory }
-    }
-    var isMapViewActive by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.orderSuccess) { if (state.orderSuccess != null) showOrderDialog = false }
+    val filteredStores = remember(state.stores, state.selectedCategory) {
+        if (state.selectedCategory == "Todas") state.stores
+        else state.stores.filter { it.type == state.selectedCategory }
+    }
 
     if (state.selectedStore == null) {
-        if (isMapViewActive) {
-            NearbyStoresMapScreen(stores = filteredStores, userLocation = state.userLocation,
-                onBack = { isMapViewActive = false },
-                onSelectStore = { storeId -> viewModel.selectStore(storeId); isMapViewActive = false })
+        if (state.isMapViewActive) {
+            NearbyStoresMapScreen(
+                stores        = filteredStores,
+                userLocation  = state.userLocation,
+                onBack        = { viewModel.setMapViewActive(false) },
+                onSelectStore = { storeId -> viewModel.selectStore(storeId) }
+            )
         } else {
-            StoreListScreen(stores = filteredStores, selectedCategory = selectedCategory,
-                onCategorySelect = { selectedCategory = it }, isLoading = state.isLoading,
-                onRefresh = { viewModel.loadStores() }, onSelectStore = { viewModel.selectStore(it.id) },
-                onMapClick = onNavigateToMap, onOpenMapMode = { isMapViewActive = true })
+            StoreListScreen(
+                stores           = filteredStores,
+                selectedCategory = state.selectedCategory,
+                onCategorySelect = { viewModel.setSelectedCategory(it) },
+                isLoading        = state.isLoading,
+                onRefresh        = { viewModel.loadStores() },
+                onSelectStore    = { viewModel.selectStore(it.id) },
+                onMapClick       = onNavigateToMap,
+                onOpenMapMode    = { viewModel.setMapViewActive(true) }
+            )
         }
     } else {
-        StoreDetailScreen(store = state.selectedStore!!, products = state.products,
-            onBack = { viewModel.clearSelectedStore() },
-            onMapClick = { onNavigateToMap(state.selectedStore!!.id) },
-            onOrderProduct = { product -> selectedProduct = product; quantity = 1; showOrderDialog = true })
+        StoreDetailScreen(
+            store          = state.selectedStore!!,
+            products       = state.products,
+            onBack         = { viewModel.clearSelectedStore() },
+            onMapClick     = { onNavigateToMap(state.selectedStore!!.id) },
+            onOrderProduct = { product -> viewModel.onSelectProduct(product) }
+        )
     }
 
     state.error?.let { msg ->
@@ -78,8 +84,8 @@ fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: Ho
 
     state.orderSuccess?.let { order ->
         AlertDialog(onDismissRequest = { viewModel.clearOrderSuccess() }, containerColor = Color.White,
-            title = { Text("¡Pedido creado!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
-                fontWeight = FontWeight.Bold, color = BrandNavy) },
+            title = { Text("¡Pedido creado!", textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(), fontWeight = FontWeight.Bold, color = BrandNavy) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Text("Total: $${order.total}", fontWeight = FontWeight.Bold, color = BrandOrange)
@@ -105,49 +111,51 @@ fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: Ho
             })
     }
 
-    if (showOrderDialog && selectedProduct != null) {
-        AlertDialog(onDismissRequest = { showOrderDialog = false }, containerColor = Color.White,
-            title = { Text("Ordenar: ${selectedProduct!!.name}", fontWeight = FontWeight.Bold, color = BrandNavy) },
+    if (state.showOrderDialog && state.selectedProduct != null) {
+        AlertDialog(onDismissRequest = { viewModel.setShowOrderDialog(false) }, containerColor = Color.White,
+            title = { Text("Ordenar: ${state.selectedProduct!!.name}", fontWeight = FontWeight.Bold, color = BrandNavy) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Precio unitario: $${selectedProduct!!.price}", color = Color(0xFF6B7280))
+                    Text("Precio unitario: $${state.selectedProduct!!.price}", color = Color(0xFF6B7280))
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF3F4F6)),
                             contentAlignment = Alignment.Center) {
-                            IconButton(onClick = { if (quantity > 1) quantity-- }, enabled = quantity > 1,
-                                modifier = Modifier.size(36.dp)) {
+                            IconButton(onClick = { if (state.quantity > 1) viewModel.setQuantity(state.quantity - 1) },
+                                enabled = state.quantity > 1, modifier = Modifier.size(36.dp)) {
                                 Icon(Icons.Default.Remove, null, tint = Color(0xFF6B7280), modifier = Modifier.size(18.dp))
                             }
                         }
-                        Text(quantity.toString(), style = MaterialTheme.typography.titleLarge,
+                        Text(state.quantity.toString(), style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold, color = BrandNavy, modifier = Modifier.padding(horizontal = 20.dp))
                         Box(Modifier.size(36.dp).clip(CircleShape).background(BrandOrange), contentAlignment = Alignment.Center) {
-                            IconButton(onClick = { if (quantity < (selectedProduct!!.stock ?: 0)) quantity++ },
-                                enabled = quantity < (selectedProduct!!.stock ?: 0), modifier = Modifier.size(36.dp)) {
+                            IconButton(
+                                onClick = { if (state.quantity < (state.selectedProduct!!.stock ?: 0)) viewModel.setQuantity(state.quantity + 1) },
+                                enabled = state.quantity < (state.selectedProduct!!.stock ?: 0),
+                                modifier = Modifier.size(36.dp)) {
                                 Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(18.dp))
                             }
                         }
                         Spacer(Modifier.weight(1f))
-                        Text("Total: $${selectedProduct!!.price * quantity}", color = BrandOrange,
-                            fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                        Text("Total: $${state.selectedProduct!!.price * state.quantity}",
+                            color = BrandOrange, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                     }
-                    if ((selectedProduct!!.stock ?: 0) <= 5) {
-                        Text("¡Sólo quedan ${selectedProduct!!.stock} unidades!",
+                    if ((state.selectedProduct!!.stock ?: 0) <= 5) {
+                        Text("¡Sólo quedan ${state.selectedProduct!!.stock} unidades!",
                             color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                     }
                     Text("Tipo de orden", color = BrandNavy, fontWeight = FontWeight.Medium)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(selected = orderType == "online", onClick = { orderType = "online" },
+                        FilterChip(selected = state.orderType == "online", onClick = { viewModel.setOrderType("online") },
                             label = { Text("En línea") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(50),
                             colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BrandOrange,
                                 selectedLabelColor = Color.White, containerColor = Color.White, labelColor = BrandOrange),
-                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = orderType == "online",
+                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = state.orderType == "online",
                                 selectedBorderColor = BrandOrange, borderColor = BrandOrange))
-                        FilterChip(selected = orderType == "reserved", onClick = { orderType = "reserved" },
+                        FilterChip(selected = state.orderType == "reserved", onClick = { viewModel.setOrderType("reserved") },
                             label = { Text("Apartar") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(50),
                             colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BrandOrange,
                                 selectedLabelColor = Color.White, containerColor = Color.White, labelColor = BrandOrange),
-                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = orderType == "reserved",
+                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = state.orderType == "reserved",
                                 selectedBorderColor = BrandOrange, borderColor = BrandOrange))
                     }
                 }
@@ -155,13 +163,15 @@ fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: Ho
             confirmButton = {
                 Button(onClick = {
                     val store = state.selectedStore ?: return@Button
-                    viewModel.createOrder(store.id, orderType, listOf(selectedProduct!!.id to quantity))
+                    viewModel.createOrder(store.id, state.orderType, listOf(state.selectedProduct!!.id to state.quantity))
                 }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)) {
-                    Text("Confirmar ($${selectedProduct!!.price * quantity})", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Confirmar ($${state.selectedProduct!!.price * state.quantity})", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
-            dismissButton = { TextButton(onClick = { showOrderDialog = false }) { Text("Cancelar", color = Color(0xFF6B7280)) } })
+            dismissButton = {
+                TextButton(onClick = { viewModel.setShowOrderDialog(false) }) { Text("Cancelar", color = Color(0xFF6B7280)) }
+            })
     }
 }
 

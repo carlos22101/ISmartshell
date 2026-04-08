@@ -13,5 +13,11 @@ data class HomeBuyerUiState(
     val orders: List<Order> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val orderSuccess: Order? = null
+    val orderSuccess: Order? = null,
+    val showOrderDialog: Boolean = false,
+    val selectedProduct: Product? = null,
+    val orderType: String = "online",
+    val quantity: Int = 1,
+    val selectedCategory: String = "Todas",
+    val isMapViewActive: Boolean = false
 )

@@ -45,11 +45,6 @@ private val WarmWhite   = Color(0xFFFFF9EE)
 @Composable
 fun CreateStoreScreen(qrScannerManager: QrScannerManager, viewModel: CreateStoreViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showCreateDialog  by remember { mutableStateOf(false) }
-    var showProductDialog by remember { mutableStateOf(false) }
-    var showQrScanner     by remember { mutableStateOf(false) }
-    var showLocationPicker by remember { mutableStateOf(false) }
-    var selectedLocation  by remember { mutableStateOf<LatLng?>(null) }
 
     state.success?.let { msg ->
         LaunchedEffect(msg) { viewModel.clearMessages() }
@@ -58,20 +53,22 @@ fun CreateStoreScreen(qrScannerManager: QrScannerManager, viewModel: CreateStore
 
     if (state.selectedStore == null) {
         SellerStoreListScreen(state.stores, state.isLoading,
-            onCreateClick = { selectedLocation = null; showCreateDialog = true },
+            onCreateClick = { viewModel.setShowCreateDialog(true) },
             onSelectStore = { viewModel.loadStoreDetail(it.id) })
     } else {
         SellerStoreDetailScreen(
-            store = state.selectedStore!!, products = state.products,
-            orders = state.orders, scannedOrder = state.scannedOrder,
-            onBack = { viewModel.clearSelectedStore() },
-            onAddProduct = { showProductDialog = true },
+            store           = state.selectedStore!!,
+            products        = state.products,
+            orders          = state.orders,
+            scannedOrder    = state.scannedOrder,
+            onBack          = { viewModel.clearSelectedStore() },
+            onAddProduct    = { viewModel.setShowProductDialog(true) },
             onDeleteProduct = { viewModel.deleteProduct(it) },
-            onUpdateStock = { id, s -> viewModel.updateProductStock(id, s) },
-            onScanQr = { showQrScanner = true },
-            onDeleteStore = { viewModel.deleteStore(state.selectedStore!!.id) },
-            onClearScanned = { viewModel.clearScannedOrder() },
-            onMarkAsReady = { viewModel.markOrderAsReady(it) }
+            onUpdateStock   = { id, s -> viewModel.updateProductStock(id, s) },
+            onScanQr        = { viewModel.setShowQrScanner(true) },
+            onDeleteStore   = { viewModel.deleteStore(state.selectedStore!!.id) },
+            onClearScanned  = { viewModel.clearScannedOrder() },
+            onMarkAsReady   = { viewModel.markOrderAsReady(it) }
         )
     }
 
@@ -81,34 +78,41 @@ fun CreateStoreScreen(qrScannerManager: QrScannerManager, viewModel: CreateStore
             confirmButton = { TextButton(onClick = { viewModel.clearMessages() }) { Text("OK") } })
     }
 
-    if (showCreateDialog) {
-        CreateStoreDialog(selectedLocation,
-            onPickLocation = { showLocationPicker = true },
-            onDismiss = { showCreateDialog = false },
-            onCreate = { name, desc, type, loc ->
+    if (state.showCreateDialog) {
+        CreateStoreDialog(
+            selectedLocation = state.selectedLocation,
+            onPickLocation   = { viewModel.setShowLocationPicker(true) },
+            onDismiss        = { viewModel.setShowCreateDialog(false) },
+            onCreate         = { name, desc, type, loc ->
                 viewModel.createStore(name, desc, type, loc.latitude, loc.longitude)
-                showCreateDialog = false
-            })
+            }
+        )
     }
 
-    if (showLocationPicker) {
-        LocationPickerScreen(selectedLocation, state.userLocation,
-            onLocationSelected = { selectedLocation = it; showLocationPicker = false },
-            onDismiss = { showLocationPicker = false })
+    if (state.showLocationPicker) {
+        LocationPickerScreen(
+            initialLocation    = state.selectedLocation,
+            userLocation       = state.userLocation,
+            onLocationSelected = { viewModel.setSelectedLocation(it) },
+            onDismiss          = { viewModel.setShowLocationPicker(false) }
+        )
     }
 
-    if (showProductDialog && state.selectedStore != null) {
-        CreateProductDialog(onDismiss = { showProductDialog = false },
-            onCreate = { name, desc, price, stock ->
+    if (state.showProductDialog && state.selectedStore != null) {
+        CreateProductDialog(
+            onDismiss = { viewModel.setShowProductDialog(false) },
+            onCreate  = { name, desc, price, stock ->
                 viewModel.createProduct(state.selectedStore!!.id, name, desc, price, stock)
-                showProductDialog = false
-            })
+            }
+        )
     }
 
-    if (showQrScanner) {
-        QrScannerOverlay(qrScannerManager,
-            onQrDetected = { code -> viewModel.scanQrOrder(code); showQrScanner = false },
-            onDismiss = { showQrScanner = false })
+    if (state.showQrScanner) {
+        QrScannerOverlay(
+            qrScannerManager = qrScannerManager,
+            onQrDetected     = { code -> viewModel.scanQrOrder(code) },
+            onDismiss        = { viewModel.setShowQrScanner(false) }
+        )
     }
 }
 
@@ -169,7 +173,7 @@ private fun SellerStoreDetailScreen(
     onUpdateStock: (String, Int) -> Unit, onScanQr: () -> Unit, onDeleteStore: () -> Unit,
     onClearScanned: () -> Unit, onMarkAsReady: (String) -> Unit
 ) {
-    var tabIndex by remember { mutableIntStateOf(0) }
+    var tabIndex          by remember { mutableIntStateOf(0) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -239,8 +243,8 @@ private fun SellerStoreDetailScreen(
                     Spacer(Modifier.height(8.dp))
                     Text(when(scannedOrder.status) {
                         "delivered" -> "Esta orden YA FUE ENTREGADA."
-                        "ready" -> "Orden LISTA. Se ha marcado como ENTREGADA ahora."
-                        else -> "ATENCIÓN: La orden aún no está marcada como 'READY'."
+                        "ready"     -> "Orden LISTA. Se ha marcado como ENTREGADA ahora."
+                        else        -> "ATENCIÓN: La orden aún no está marcada como 'READY'."
                     }, color = Color(0xFF6B7280))
                 }
             },
@@ -473,7 +477,7 @@ private fun DialogField(label: String?, value: String, onValueChange: (String) -
 @Composable
 private fun QrScannerOverlay(qrScannerManager: QrScannerManager, onQrDetected: (String) -> Unit, onDismiss: () -> Unit) {
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner   = LocalLifecycleOwner.current
 
     AlertDialog(onDismissRequest = onDismiss,
         title = { Text("Escanear QR del cliente", fontWeight = FontWeight.Bold, color = BrandNavy) },
