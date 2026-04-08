@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlos.ismartshell.core.managers.LocationManager
 import com.carlos.ismartshell.core.managers.VibrationManager
+import com.carlos.ismartshell.core.util.LatLng
 import com.carlos.ismartshell.features.seller.domain.usecases.*
 import com.carlos.ismartshell.features.seller.presentation.screens.CreateStoreUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,7 +30,7 @@ class CreateStoreViewModel @Inject constructor(
 
     @Inject lateinit var sellerRepo: com.carlos.ismartshell.features.seller.domain.repositories.SellerRepository
 
-    init { 
+    init {
         loadStores()
         fetchUserLocation()
     }
@@ -46,7 +47,7 @@ class CreateStoreViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             getStoresUseCase()
                 .onSuccess { stores -> _uiState.update { it.copy(stores = stores, isLoading = false) } }
-                .onFailure { e    -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
+                .onFailure { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
         }
     }
 
@@ -69,18 +70,18 @@ class CreateStoreViewModel @Inject constructor(
     fun createStore(name: String, description: String, type: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            
             if (lat == 0.0 && lng == 0.0) {
                 _uiState.update { it.copy(error = "Ubicación inválida.", isLoading = false) }
                 return@launch
             }
-
             createStoreUseCase(name, description, type, lat, lng)
                 .onSuccess { store ->
                     _uiState.update { it.copy(
-                        stores    = it.stores + store,
-                        success   = "Tienda \"${store.name}\" creada correctamente",
-                        isLoading = false
+                        stores          = it.stores + store,
+                        success         = "Tienda \"${store.name}\" creada correctamente",
+                        isLoading       = false,
+                        showCreateDialog = false,
+                        selectedLocation = null
                     )}
                 }
                 .onFailure { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
@@ -124,7 +125,11 @@ class CreateStoreViewModel @Inject constructor(
         viewModelScope.launch {
             sellerRepo.createProduct(businessId, name, description, price, stock)
                 .onSuccess { product ->
-                    _uiState.update { it.copy(products = it.products + product, success = "Producto creado") }
+                    _uiState.update { it.copy(
+                        products         = it.products + product,
+                        success          = "Producto creado",
+                        showProductDialog = false
+                    )}
                 }
                 .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
         }
@@ -137,7 +142,7 @@ class CreateStoreViewModel @Inject constructor(
                     _uiState.update { state ->
                         state.copy(
                             products = state.products.map { if (it.id == productId) updatedProduct else it },
-                            success = "Stock actualizado correctamente"
+                            success  = "Stock actualizado correctamente"
                         )
                     }
                 }
@@ -161,12 +166,13 @@ class CreateStoreViewModel @Inject constructor(
     fun scanQrOrder(qrCode: String) {
         viewModelScope.launch {
             sellerRepo.scanOrderQr(qrCode)
-                .onSuccess  { order ->
+                .onSuccess { order ->
                     vibrationManager.vibrateSingle()
                     _uiState.update { state ->
                         state.copy(
-                            scannedOrder = order,
-                            orders = state.orders.map { if (it.id == order.id) order else it }
+                            scannedOrder  = order,
+                            showQrScanner = false,
+                            orders        = state.orders.map { if (it.id == order.id) order else it }
                         )
                     }
                 }
@@ -183,7 +189,7 @@ class CreateStoreViewModel @Inject constructor(
                 .onSuccess { updatedOrder ->
                     _uiState.update { state ->
                         state.copy(
-                            orders = state.orders.map { if (it.id == orderId) updatedOrder else it },
+                            orders  = state.orders.map { if (it.id == orderId) updatedOrder else it },
                             success = "Orden lista para entrega"
                         )
                     }
@@ -192,9 +198,18 @@ class CreateStoreViewModel @Inject constructor(
         }
     }
 
-    suspend fun getCurrentLocation() = try { locationManager.getLastLocation() } catch(e: Exception) { null }
+    suspend fun getCurrentLocation() = try { locationManager.getLastLocation() } catch (e: Exception) { null }
 
-    fun clearScannedOrder() { _uiState.update { it.copy(scannedOrder = null) } }
+    fun setShowCreateDialog(show: Boolean) {
+        _uiState.update { it.copy(showCreateDialog = show, selectedLocation = if (!show) null else it.selectedLocation) }
+    }
+    fun setShowProductDialog(show: Boolean)  { _uiState.update { it.copy(showProductDialog = show) } }
+    fun setShowQrScanner(show: Boolean)      { _uiState.update { it.copy(showQrScanner = show) } }
+    fun setShowLocationPicker(show: Boolean) { _uiState.update { it.copy(showLocationPicker = show) } }
+    fun setSelectedLocation(location: LatLng?) {
+        _uiState.update { it.copy(selectedLocation = location, showLocationPicker = false) }
+    }
+    fun clearScannedOrder()  { _uiState.update { it.copy(scannedOrder = null) } }
     fun clearSelectedStore() { _uiState.update { it.copy(selectedStore = null, products = emptyList(), orders = emptyList()) } }
     fun clearMessages()      { _uiState.update { it.copy(error = null, success = null) } }
 }
