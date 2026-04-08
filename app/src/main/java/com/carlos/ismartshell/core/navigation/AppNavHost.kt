@@ -29,26 +29,25 @@ import com.carlos.ismartshell.features.qr_scanner.presentation.screens.QrHistory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 
-private val BrandNavy = Color(0xFF1E1B4B)
+private val BrandNavy   = Color(0xFF1E1B4B)
+private val BrandOrange = Color(0xFFF97316)
 
 sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object HomeBuyer : Screen("home_buyer")
-    object QrHistory : Screen("qr_history")
-
-    object StoreMap : Screen("store_map/{businessId}") {
+    object Login      : Screen("login")
+    object Register   : Screen("register")
+    object HomeBuyer  : Screen("home_buyer")
+    object QrHistory  : Screen("qr_history")
+    object SellerHome : Screen("seller_home")
+    object StoreMap   : Screen("store_map/{businessId}") {
         fun createRoute(businessId: String) = "store_map/$businessId"
     }
-
-    object SellerHome : Screen("seller_home")
 }
 
 data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
 
 val buyerNavItems = listOf(
-    BottomNavItem(Screen.HomeBuyer.route, "Tiendas", Icons.Default.Store),
-    BottomNavItem(Screen.QrHistory.route, "Pedidos", Icons.Default.History)
+    BottomNavItem(Screen.HomeBuyer.route, "Inicio",   Icons.Default.Home),
+    BottomNavItem(Screen.QrHistory.route, "Pedidos",  Icons.Default.History)
 )
 
 val sellerNavItems = listOf(
@@ -56,16 +55,11 @@ val sellerNavItems = listOf(
 )
 
 @Composable
-fun AppNavHost(
-    viewModel: AppNavViewModel = hiltViewModel()
-) {
-
+fun AppNavHost(viewModel: AppNavViewModel = hiltViewModel()) {
     val navController = rememberNavController()
-    val tokenManager = viewModel.tokenManager
-
+    val tokenManager  = viewModel.tokenManager
     val isLoggedIn by tokenManager.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
-    val userRole by tokenManager.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
-
+    val userRole   by tokenManager.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
 
     val isSellerRole = remember(userRole) {
@@ -75,23 +69,19 @@ fun AppNavHost(
 
     if (isLoggedIn == null || (isLoggedIn == true && userRole == null)) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = BrandOrange)
         }
         return
     }
 
     val startDest = if (isLoggedIn == true) {
         if (isSellerRole) Screen.SellerHome.route else Screen.HomeBuyer.route
-    } else {
-        Screen.Login.route
-    }
+    } else Screen.Login.route
 
     val onLogout: () -> Unit = {
         scope.launch {
             tokenManager.clearSession()
-            navController.navigate(Screen.Login.route) {
-                popUpTo(0) { inclusive = true }
-            }
+            navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
         }
     }
 
@@ -100,15 +90,9 @@ fun AppNavHost(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { role ->
-                    val r = role.lowercase().trim()
-
-                    val dest =
-                        if (r == "seller" || r == "vendedor") Screen.SellerHome.route
-                        else Screen.HomeBuyer.route
-
-                    navController.navigate(dest) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
+                    val dest = if (role.lowercase().trim().let { it == "seller" || it == "vendedor" })
+                        Screen.SellerHome.route else Screen.HomeBuyer.route
+                    navController.navigate(dest) { popUpTo(Screen.Login.route) { inclusive = true } }
                 },
                 onGoToRegister = { navController.navigate(Screen.Register.route) }
             )
@@ -117,17 +101,9 @@ fun AppNavHost(
         composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterSuccess = { role ->
-
-                    val r = role.lowercase().trim()
-
-                    val dest =
-                        if (r == "seller" || r == "vendedor") Screen.SellerHome.route
-                        else Screen.HomeBuyer.route
-
-                    navController.navigate(dest) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-
+                    val dest = if (role.lowercase().trim().let { it == "seller" || it == "vendedor" })
+                        Screen.SellerHome.route else Screen.HomeBuyer.route
+                    navController.navigate(dest) { popUpTo(Screen.Login.route) { inclusive = true } }
                 },
                 onGoToLogin = { navController.popBackStack() }
             )
@@ -135,11 +111,9 @@ fun AppNavHost(
 
         composable(Screen.HomeBuyer.route) {
             BuyerScaffold(navController, onLogout) {
-                HomeBuyerScreen(
-                    onNavigateToMap = {
-                            id -> navController.navigate(Screen.StoreMap.createRoute(id))
-                    }
-                )
+                HomeBuyerScreen(onNavigateToMap = { id ->
+                    navController.navigate(Screen.StoreMap.createRoute(id))
+                })
             }
         }
 
@@ -153,29 +127,15 @@ fun AppNavHost(
             route = Screen.StoreMap.route,
             arguments = listOf(navArgument("businessId") { type = NavType.StringType })
         ) { backStack ->
-
-            val businessId =
-                backStack.arguments?.getString("businessId") ?: return@composable
-
-            StoreMapScreen(
-                businessId = businessId,
-                onBack = { navController.popBackStack() }
-            )
+            val businessId = backStack.arguments?.getString("businessId") ?: return@composable
+            StoreMapScreen(businessId = businessId, onBack = { navController.popBackStack() })
         }
 
         composable(Screen.SellerHome.route) {
-
-            val qrScannerManager: QrScannerManager =
-                hiltViewModel<QrNavViewModel>().qrScannerManager
-
+            val qrScannerManager = hiltViewModel<QrNavViewModel>().qrScannerManager
             SellerScaffold(navController, onLogout) {
-
-                CreateStoreScreen(
-                    qrScannerManager = qrScannerManager
-                )
-
+                CreateStoreScreen(qrScannerManager = qrScannerManager)
             }
-
         }
     }
 }
@@ -187,46 +147,23 @@ private fun BuyerScaffold(
     onLogout: () -> Unit,
     content: @Composable () -> Unit
 ) {
-
     Scaffold(
-
         topBar = {
-
             TopAppBar(
-
-                title = {
-                    Text(
-                        "iSmartShell",
-                        color = Color.White
-                    )
-                },
-
+                title = { Text("iSmartShell", color = Color.White) },
                 actions = {
                     IconButton(onClick = onLogout) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Cerrar sesión",
-                            tint = Color.White
-                        )
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión", tint = Color.White)
                     }
                 },
-
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandNavy
-                )
-
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
             )
         },
-
         bottomBar = {
-
-            NavigationBar {
-
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
                 val navBackStack by navController.currentBackStackEntryAsState()
                 val current = navBackStack?.destination?.route
-
                 buyerNavItems.forEach { item ->
-
                     NavigationBarItem(
                         selected = current == item.route,
                         onClick = {
@@ -237,25 +174,21 @@ private fun BuyerScaffold(
                             }
                         },
                         icon = { Icon(item.icon, item.label) },
-                        label = { Text(item.label) }
+                        label = { Text(item.label) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = BrandOrange,
+                            selectedTextColor = BrandOrange,
+                            indicatorColor = BrandOrange.copy(alpha = 0.12f),
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-
                 }
-
             }
-
         }
-
     ) { padding ->
-
-        Box(
-            Modifier.padding(padding)
-        ) {
-            content()
-        }
-
+        Box(Modifier.padding(padding)) { content() }
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -265,47 +198,23 @@ private fun SellerScaffold(
     onLogout: () -> Unit,
     content: @Composable () -> Unit
 ) {
-
     Scaffold(
-
         topBar = {
-
             TopAppBar(
-
-                title = {
-                    Text(
-                        "iSmartShell (Vendedor)",
-                        color = Color.White
-                    )
-                },
-
+                title = { Text("iSmartShell (Vendedor)", color = Color.White) },
                 actions = {
                     IconButton(onClick = onLogout) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Cerrar sesión",
-                            tint = Color.White
-                        )
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión", tint = Color.White)
                     }
                 },
-
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandNavy
-                )
-
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
             )
-
         },
-
         bottomBar = {
-
-            NavigationBar {
-
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
                 val navBackStack by navController.currentBackStackEntryAsState()
                 val current = navBackStack?.destination?.route
-
                 sellerNavItems.forEach { item ->
-
                     NavigationBarItem(
                         selected = current == item.route,
                         onClick = {
@@ -316,33 +225,25 @@ private fun SellerScaffold(
                             }
                         },
                         icon = { Icon(item.icon, item.label) },
-                        label = { Text(item.label) }
+                        label = { Text(item.label) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = BrandOrange,
+                            selectedTextColor = BrandOrange,
+                            indicatorColor = BrandOrange.copy(alpha = 0.12f),
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-
                 }
-
             }
-
         }
-
     ) { padding ->
-
-        Box(
-            Modifier.padding(padding)
-        ) {
-            content()
-        }
-
+        Box(Modifier.padding(padding)) { content() }
     }
-
 }
 
 @HiltViewModel
-class AppNavViewModel @Inject constructor(
-    val tokenManager: TokenManager
-) : ViewModel()
+class AppNavViewModel @Inject constructor(val tokenManager: TokenManager) : ViewModel()
 
 @HiltViewModel
-class QrNavViewModel @Inject constructor(
-    val qrScannerManager: QrScannerManager
-) : ViewModel()
+class QrNavViewModel @Inject constructor(val qrScannerManager: QrScannerManager) : ViewModel()
