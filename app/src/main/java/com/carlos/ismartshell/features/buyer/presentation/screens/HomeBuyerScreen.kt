@@ -27,11 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carlos.ismartshell.core.util.DateTimeUtils
 import com.carlos.ismartshell.core.util.QrCodeGenerator
 import com.carlos.ismartshell.features.buyer.domain.entities.BuyerStore
 import com.carlos.ismartshell.features.buyer.domain.entities.Product
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
 import com.carlos.ismartshell.features.maps.presentation.screens.NearbyStoresMapScreen
+import com.carlos.ismartshell.features.qr_scanner.presentation.screens.OrderTimer
 import com.carlos.ismartshell.features.seller.presentation.screens.STORE_CATEGORIES
 
 private val BrandNavy   = Color(0xFF1E1B4B)
@@ -132,9 +134,13 @@ fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: Ho
                     }
                     if (order.type == "reserved") {
                         Spacer(Modifier.height(8.dp))
-                        Text("Recoge antes de:", style = MaterialTheme.typography.labelMedium,
+                        OrderTimer(order.createdAt)
+                    }
+                    order.createdAt?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Creado: ${DateTimeUtils.formatIsoToDisplay(it)}",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(order.pickupDeadline ?: "N/A", color = BrandOrange, fontWeight = FontWeight.Bold)
                     }
                 }
             },

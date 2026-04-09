@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -25,13 +26,53 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carlos.ismartshell.core.util.DateTimeUtils
 import com.carlos.ismartshell.core.util.QrCodeGenerator
 import com.carlos.ismartshell.features.buyer.domain.entities.Order
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
+import kotlinx.coroutines.delay
+
+import java.util.Locale
 
 private val BrandNavy   = Color(0xFF1E1B4B)
 private val BrandOrange = Color(0xFFF97316)
 private val WarmWhite   = Color(0xFFFFF9EE)
+
+@Composable
+fun OrderTimer(createdAt: String?) {
+    var remainingMillis by remember { 
+        mutableLongStateOf(DateTimeUtils.getRemainingMillis(createdAt)) 
+    }
+
+    LaunchedEffect(createdAt) {
+        while (remainingMillis > 0) {
+            delay(1000)
+            remainingMillis = DateTimeUtils.getRemainingMillis(createdAt)
+        }
+    }
+
+    if (remainingMillis > 0) {
+        val minutes = (remainingMillis / 1000) / 60
+        val seconds = (remainingMillis / 1000) % 60
+        val color = if (minutes < 5) Color.Red else Color(0xFFF59E0B)
+        
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Refresh, 
+                contentDescription = null, 
+                tint = color, 
+                modifier = Modifier.size(12.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = String.format(Locale.getDefault(), "Expira en: %02d:%02d", minutes, seconds),
+                fontSize = 11.sp,
+                color = color,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,11 +143,13 @@ fun QrHistoryScreen(viewModel: HomeBuyerViewModel = hiltViewModel()) {
                     Text("No tienes pedidos activos", color = Color(0xFF6B7280))
                 }
             } else {
+                val stores = state.stores
                 LazyColumn(Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(filteredOrders, key = { it.id }) { order ->
-                        OrderHistoryItem(order, onShowQr = { selectedOrder = order })
+                        val storeName = stores.find { it.id == order.businessId }?.name ?: "Tienda desconocida"
+                        OrderHistoryItem(order, storeName, onShowQr = { selectedOrder = order })
                     }
                 }
             }
@@ -119,7 +162,7 @@ fun QrHistoryScreen(viewModel: HomeBuyerViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun OrderHistoryItem(order: Order, onShowQr: () -> Unit) {
+private fun OrderHistoryItem(order: Order, storeName: String, onShowQr: () -> Unit) {
     val (borderColor, bgBadge, txtBadge, labelBadge) = when (order.status) {
         "delivered" -> listOf(Color(0xFF10B981), Color(0xFFD1FAE5), Color(0xFF065F46), "Entregado ✓")
         "ready"     -> listOf(Color(0xFF06B6D4), Color(0xFFCFFAFE), Color(0xFF155E75), "Listo para recoger")
@@ -132,6 +175,13 @@ private fun OrderHistoryItem(order: Order, onShowQr: () -> Unit) {
         Box(Modifier.width(4.dp).fillMaxHeight().background(borderColor as Color))
         Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 14.dp)) {
             Text("Pedido #${order.id.take(8)}", fontWeight = FontWeight.Bold, color = Color(0xFF1E1B13))
+            
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+                Icon(Icons.Default.Storefront, null, tint = Color(0xFF6B7280), modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(storeName, fontSize = 13.sp, color = Color(0xFF4B5563), fontWeight = FontWeight.Medium)
+            }
+
             Spacer(Modifier.height(4.dp))
             Box(Modifier.clip(RoundedCornerShape(6.dp)).background(bgBadge as Color)
                 .padding(horizontal = 8.dp, vertical = 2.dp)) {
@@ -140,10 +190,10 @@ private fun OrderHistoryItem(order: Order, onShowQr: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             Text("$${order.total}", color = BrandOrange, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             if (order.status == "reserved" || order.status == "paid" || order.status == "ready") {
-                Text("Recoger antes de: ${order.pickupDeadline ?: "N/A"}", fontSize = 12.sp, color = Color(0xFF6B7280))
+                OrderTimer(order.createdAt)
             }
             order.createdAt?.let {
-                Text("Creado: $it", fontSize = 11.sp, color = Color(0xFF9CA3AF))
+                Text("Creado: ${DateTimeUtils.formatIsoToDisplay(it)}", fontSize = 11.sp, color = Color(0xFF9CA3AF))
             }
         }
         if (order.status != "delivered" && order.status != "cancelled") {

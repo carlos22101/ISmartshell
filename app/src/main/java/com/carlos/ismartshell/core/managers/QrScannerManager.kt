@@ -29,11 +29,16 @@ class QrScannerManager @Inject constructor(
             .build()
     )
 
+    private var lastScannedCode: String? = null
+    private var lastScanTime: Long = 0L
+
     fun startScanning(
         lifecycleOwner: LifecycleOwner,
         previewView: PreviewView,
         onQrDetected: (String) -> Unit
     ) {
+        lastScannedCode = null
+        lastScanTime = 0L
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
         cameraProviderFuture.addListener({
@@ -72,7 +77,15 @@ class QrScannerManager @Inject constructor(
 
         scanner.process(image)
             .addOnSuccessListener { barcodes ->
-                barcodes.firstOrNull()?.rawValue?.let { onQrDetected(it) }
+                val code = barcodes.firstOrNull()?.rawValue
+                if (code != null) {
+                    val currentTime = System.currentTimeMillis()
+                    if (code != lastScannedCode || (currentTime - lastScanTime) > 3000) {
+                        lastScannedCode = code
+                        lastScanTime = currentTime
+                        onQrDetected(code)
+                    }
+                }
             }
             .addOnCompleteListener { imageProxy.close() }
     }

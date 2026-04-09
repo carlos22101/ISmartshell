@@ -179,10 +179,11 @@ class CreateStoreViewModel @Inject constructor(
         if (isScanningInternal) return
         isScanningInternal = true
         
-        // Limpiamos errores previos y cerramos el scanner inmediatamente
-        _uiState.update { it.copy(showQrScanner = false, error = null) }
+        // Cerramos el scanner inmediatamente para evitar múltiples detecciones visuales
+        _uiState.update { it.copy(showQrScanner = false) }
 
         viewModelScope.launch {
+            _uiState.update { it.copy(error = null) } // Limpiar error anterior antes de nueva petición
             sellerRepo.scanOrderQr(qrCode)
                 .onSuccess { order ->
                     vibrationManager.vibrateSingle()
