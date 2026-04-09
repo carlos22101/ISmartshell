@@ -24,37 +24,52 @@ class HomeBuyerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeBuyerUiState())
     val uiState = _uiState.asStateFlow()
 
-    init { loadStores() }
+    init {
+        loadStores()
+    }
 
-    fun loadStores() {
+    fun refreshAllData() {
+        // Actualizar tiendas en general
+        loadStores(silent = true)
+        
+        // Si hay una tienda seleccionada, actualizar sus productos
+        _uiState.value.selectedStore?.let { store ->
+            selectStore(store.id, silent = true)
+        }
+        
+        // Actualizar mis pedidos
+        loadMyOrders(silent = true)
+    }
+
+    fun loadStores(silent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (!silent) _uiState.update { it.copy(isLoading = true) }
             val location = try { locationManager.getLastLocation() } catch (e: Exception) { null }
             _uiState.update { it.copy(userLocation = location) }
             val lat = location?.latitude  ?: 16.7516
             val lng = location?.longitude ?: -93.1148
             getStoresUseCase(lat, lng, 2.0)
                 .onSuccess { stores -> _uiState.update { it.copy(stores = stores, isLoading = false) } }
-                .onFailure { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
+                .onFailure { e -> if (!silent) _uiState.update { it.copy(error = e.message, isLoading = false) } }
         }
     }
 
-    fun selectStore(storeId: String) {
+    fun selectStore(storeId: String, silent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, isMapViewActive = false) }
+            if (!silent) _uiState.update { it.copy(isLoading = true, isMapViewActive = false) }
             storeRepository.getStoreById(storeId)
                 .onSuccess { store ->
                     _uiState.update { it.copy(selectedStore = store, products = store.products, isLoading = false) }
                 }
-                .onFailure { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
+                .onFailure { e -> if (!silent) _uiState.update { it.copy(error = e.message, isLoading = false) } }
         }
     }
 
-    fun loadMyOrders() {
+    fun loadMyOrders(silent: Boolean = false) {
         viewModelScope.launch {
             storeRepository.getMyOrders()
                 .onSuccess { orders -> _uiState.update { it.copy(orders = orders) } }
-                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+                .onFailure { e -> if (!silent) _uiState.update { it.copy(error = e.message) } }
         }
     }
 

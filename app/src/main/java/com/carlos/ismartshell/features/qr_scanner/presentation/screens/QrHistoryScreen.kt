@@ -40,7 +40,12 @@ fun QrHistoryScreen(viewModel: HomeBuyerViewModel = hiltViewModel()) {
     var selectedOrder    by remember { mutableStateOf<Order?>(null) }
     var selectedFilter   by remember { mutableStateOf("Todos") }
 
-    LaunchedEffect(Unit) { viewModel.loadMyOrders() }
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.loadMyOrders(silent = true)
+            kotlinx.coroutines.delay(5000)
+        }
+    }
 
     val filteredOrders = remember(state.orders, selectedFilter) {
         when (selectedFilter) {
@@ -58,11 +63,6 @@ fun QrHistoryScreen(viewModel: HomeBuyerViewModel = hiltViewModel()) {
                     Column {
                         Text("Mis Pedidos", color = Color.White, fontWeight = FontWeight.Bold)
                         Text("Tu historial de reservas", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.loadMyOrders() }) {
-                        Icon(Icons.Default.Refresh, "Actualizar", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
@@ -105,7 +105,7 @@ fun QrHistoryScreen(viewModel: HomeBuyerViewModel = hiltViewModel()) {
                 LazyColumn(Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(filteredOrders) { order ->
+                    items(filteredOrders, key = { it.id }) { order ->
                         OrderHistoryItem(order, onShowQr = { selectedOrder = order })
                     }
                 }

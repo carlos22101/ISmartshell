@@ -46,6 +46,13 @@ private val WarmWhite   = Color(0xFFFFF9EE)
 fun CreateStoreScreen(qrScannerManager: QrScannerManager, viewModel: CreateStoreViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.refreshSellerData()
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+
     state.success?.let { msg ->
         LaunchedEffect(msg) { viewModel.clearMessages() }
         Snackbar(modifier = Modifier.padding(16.dp)) { Text(msg) }
@@ -199,7 +206,7 @@ private fun SellerStoreDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatCard("Productos", products.size.toString(), BrandOrange, Modifier.weight(1f))
                 StatCard("Pedidos", orders.size.toString(), BrandPurple, Modifier.weight(1f))
-                StatCard("Pendientes", orders.count { it.status != "delivered" && it.status != "ready" }.toString(),
+                StatCard("Pendientes", orders.count { it.status == "paid" || it.status == "reserved" }.toString(),
                     Color(0xFFF59E0B), Modifier.weight(1f))
             }
             TabRow(selectedTabIndex = tabIndex, containerColor = Color.White, contentColor = BrandOrange) {
@@ -238,12 +245,18 @@ private fun SellerStoreDetailScreen(
                     Text("ID: ${scannedOrder.id.take(8)}", fontWeight = FontWeight.Bold)
                     Text("Total: $${scannedOrder.total}")
                     Text(scannedOrder.status.uppercase(),
-                        color = when(scannedOrder.status) { "delivered" -> Color(0xFF4CAF50); "ready" -> Color(0xFF2196F3); else -> BrandOrange },
+                        color = when(scannedOrder.status) {
+                            "delivered" -> Color(0xFF4CAF50)
+                            "ready"     -> Color(0xFF2196F3)
+                            "cancelled" -> Color(0xFFEF4444)
+                            else        -> BrandOrange
+                        },
                         fontWeight = FontWeight.ExtraBold)
                     Spacer(Modifier.height(8.dp))
                     Text(when(scannedOrder.status) {
                         "delivered" -> "Esta orden YA FUE ENTREGADA."
                         "ready"     -> "Orden LISTA. Se ha marcado como ENTREGADA ahora."
+                        "cancelled" -> "Esta orden fue CANCELADA por tiempo o usuario."
                         else        -> "ATENCIÓN: La orden aún no está marcada como 'READY'."
                     }, color = Color(0xFF6B7280))
                 }
@@ -341,10 +354,16 @@ private fun OrdersTab(orders: List<Order>, onMarkAsReady: (String) -> Unit) {
     } else {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(orders, key = { it.id }) { order ->
-                val accentColor = when(order.status) { "delivered" -> Color(0xFF10B981); "ready" -> Color(0xFF06B6D4); else -> Color(0xFFF59E0B) }
+                val accentColor = when(order.status) {
+                    "delivered" -> Color(0xFF10B981)
+                    "ready"     -> Color(0xFF06B6D4)
+                    "cancelled" -> Color(0xFFEF4444)
+                    else        -> Color(0xFFF59E0B)
+                }
                 val (bgBadge, txtBadge, labelBadge) = when(order.status) {
                     "delivered" -> Triple(Color(0xFFD1FAE5), Color(0xFF065F46), "Entregado")
                     "ready"     -> Triple(Color(0xFFCFFAFE), Color(0xFF155E75), "Listo")
+                    "cancelled" -> Triple(Color(0xFFFEE2E2), Color(0xFF991B1B), "Cancelado")
                     else        -> Triple(Color(0xFFFEF3C7), Color(0xFF92400E), "Pendiente")
                 }
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))

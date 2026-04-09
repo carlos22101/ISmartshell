@@ -43,6 +43,13 @@ private val WarmWhite   = Color(0xFFFFF9EE)
 fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: HomeBuyerViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.refreshAllData()
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+
     val filteredStores = remember(state.stores, state.selectedCategory) {
         if (state.selectedCategory == "Todas") state.stores
         else state.stores.filter { it.type == state.selectedCategory }
@@ -261,7 +268,6 @@ private fun StoreListScreen(
                 title = { Text("Tiendas cercanas", color = Color.White, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = onOpenMapMode) { Icon(Icons.Default.Map, null, tint = Color.White) }
-                    IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, null, tint = Color.White) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
             )
@@ -315,7 +321,7 @@ private fun StoreListScreen(
             } else {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(stores) { store -> StoreCard(store, onSelectStore, onMapClick) }
+                    items(stores, key = { it.id }) { store -> StoreCard(store, onSelectStore, onMapClick) }
                 }
             }
         }
@@ -410,7 +416,7 @@ private fun StoreDetailScreen(
                     }
                 }
             } else {
-                items(products) { product -> ProductCard(product, onOrderProduct) }
+                items(products, key = { it.id }) { product -> ProductCard(product, onOrderProduct) }
             }
         }
     }
