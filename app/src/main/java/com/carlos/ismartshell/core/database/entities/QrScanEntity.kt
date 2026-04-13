@@ -8,6 +8,6 @@ data class QrScanEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val code: String,
-    val label: String,          // descripción del QR (ej. nombre del negocio)
+    val label: String,
     val scannedAt: Long = System.currentTimeMillis()
 )
