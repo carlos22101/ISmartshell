@@ -131,8 +131,8 @@ class SellerRepositoryImpl @Inject constructor(
             val errorBody = res.errorBody()?.string()
             var errorMsg = try { Gson().fromJson(errorBody, ApiResponse::class.java).error } catch(e: Exception) { null }
             
-            if (errorMsg == "invalid status transition") {
-                errorMsg = "La orden aún no está marcada como 'LISTA'."
+            if (errorMsg?.contains("invalid status transition") == true) {
+                errorMsg = "La orden ya fue procesada o tiene un estado inválido para entrega."
             } else if (res.code() == 410 || errorMsg?.contains("expired") == true) {
                 errorMsg = "La orden ha expirado."
             }

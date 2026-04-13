@@ -27,11 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carlos.ismartshell.core.util.DateTimeUtils
 import com.carlos.ismartshell.core.util.QrCodeGenerator
 import com.carlos.ismartshell.features.buyer.domain.entities.BuyerStore
 import com.carlos.ismartshell.features.buyer.domain.entities.Product
 import com.carlos.ismartshell.features.buyer.presentation.viewmodels.HomeBuyerViewModel
 import com.carlos.ismartshell.features.maps.presentation.screens.NearbyStoresMapScreen
+import com.carlos.ismartshell.features.qr_scanner.presentation.screens.OrderTimer
 import com.carlos.ismartshell.features.seller.presentation.screens.STORE_CATEGORIES
 
 private val BrandNavy   = Color(0xFF1E1B4B)
@@ -42,6 +44,13 @@ private val WarmWhite   = Color(0xFFFFF9EE)
 @Composable
 fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: HomeBuyerViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.refreshAllData()
+            kotlinx.coroutines.delay(5000)
+        }
+    }
 
     val filteredStores = remember(state.stores, state.selectedCategory) {
         if (state.selectedCategory == "Todas") state.stores
@@ -125,9 +134,13 @@ fun HomeBuyerScreen(onNavigateToMap: (businessId: String) -> Unit, viewModel: Ho
                     }
                     if (order.type == "reserved") {
                         Spacer(Modifier.height(8.dp))
-                        Text("Recoge antes de:", style = MaterialTheme.typography.labelMedium,
+                        OrderTimer(order.createdAt)
+                    }
+                    order.createdAt?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Creado: ${DateTimeUtils.formatIsoToDisplay(it)}",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(order.pickupDeadline ?: "N/A", color = BrandOrange, fontWeight = FontWeight.Bold)
                     }
                 }
             },
@@ -261,7 +274,6 @@ private fun StoreListScreen(
                 title = { Text("Tiendas cercanas", color = Color.White, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = onOpenMapMode) { Icon(Icons.Default.Map, null, tint = Color.White) }
-                    IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, null, tint = Color.White) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandNavy)
             )
@@ -315,7 +327,7 @@ private fun StoreListScreen(
             } else {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(stores) { store -> StoreCard(store, onSelectStore, onMapClick) }
+                    items(stores, key = { it.id }) { store -> StoreCard(store, onSelectStore, onMapClick) }
                 }
             }
         }
@@ -410,7 +422,7 @@ private fun StoreDetailScreen(
                     }
                 }
             } else {
-                items(products) { product -> ProductCard(product, onOrderProduct) }
+                items(products, key = { it.id }) { product -> ProductCard(product, onOrderProduct) }
             }
         }
     }

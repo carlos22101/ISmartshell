@@ -35,6 +35,16 @@ class CreateStoreViewModel @Inject constructor(
         fetchUserLocation()
     }
 
+    fun refreshSellerData() {
+        viewModelScope.launch {
+            if (_uiState.value.selectedStore != null) {
+                loadStoreDetail(_uiState.value.selectedStore!!.id, silent = true)
+            } else {
+                loadStores(silent = true)
+            }
+        }
+    }
+
     private fun fetchUserLocation() {
         viewModelScope.launch {
             val location = try { locationManager.getLastLocation() } catch (e: Exception) { null }
@@ -42,18 +52,18 @@ class CreateStoreViewModel @Inject constructor(
         }
     }
 
-    fun loadStores() {
+    fun loadStores(silent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (!silent) _uiState.update { it.copy(isLoading = true) }
             getStoresUseCase()
                 .onSuccess { stores -> _uiState.update { it.copy(stores = stores, isLoading = false) } }
-                .onFailure { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
+                .onFailure { e -> if (!silent) _uiState.update { it.copy(error = e.message, isLoading = false) } }
         }
     }
 
-    fun loadStoreDetail(id: String) {
+    fun loadStoreDetail(id: String, silent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (!silent) _uiState.update { it.copy(isLoading = true) }
             getDetailUseCase(id)
                 .onSuccess { store ->
                     _uiState.update { it.copy(
@@ -63,7 +73,7 @@ class CreateStoreViewModel @Inject constructor(
                         isLoading     = false
                     )}
                 }
-                .onFailure { e -> _uiState.update { it.copy(error = e.message, isLoading = false) } }
+                .onFailure { e -> if (!silent) _uiState.update { it.copy(error = e.message, isLoading = false) } }
         }
     }
 
@@ -162,16 +172,25 @@ class CreateStoreViewModel @Inject constructor(
         }
     }
 
+    private var isScanningInternal = false
+
     @androidx.annotation.RequiresPermission(android.Manifest.permission.VIBRATE)
     fun scanQrOrder(qrCode: String) {
+        if (isScanningInternal) return
+        isScanningInternal = true
+        
+        // Cerramos el scanner inmediatamente para evitar múltiples detecciones visuales
+        _uiState.update { it.copy(showQrScanner = false) }
+
         viewModelScope.launch {
+            _uiState.update { it.copy(error = null) } // Limpiar error anterior antes de nueva petición
             sellerRepo.scanOrderQr(qrCode)
                 .onSuccess { order ->
                     vibrationManager.vibrateSingle()
                     _uiState.update { state ->
                         state.copy(
                             scannedOrder  = order,
-                            showQrScanner = false,
+                            error         = null,
                             orders        = state.orders.map { if (it.id == order.id) order else it }
                         )
                     }
@@ -180,6 +199,7 @@ class CreateStoreViewModel @Inject constructor(
                     vibrationManager.vibrateError()
                     _uiState.update { it.copy(error = e.message) }
                 }
+            isScanningInternal = false
         }
     }
 
